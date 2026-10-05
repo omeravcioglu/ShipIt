@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Type-checks the Steam module (Assets/IndieStudio/Steam) in a few seconds, without Unity and without
+    Steamworks.NET installed: SteamworksStub.cs stands in for the parts of the Steamworks.NET API the module
+    uses, with their real names and signatures. Unity's own compile, once Steamworks.NET is installed, is
+    the real check.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <UnityEditorDir Condition="'$(UnityEditorDir)' == ''">C:\Program Files\Unity\Hub\Editor\6000.0.32f1\Editor</UnityEditorDir>
+    <DefineConstants>$(DefineConstants);STEAMWORKS_NET;UNITY_STANDALONE_WIN</DefineConstants>
+    <NoWarn>$(NoWarn);CS1701;CS1702</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Assets\IndieStudio\Steam\**\*.cs" />
+    <Compile Include="SteamworksStub.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(UnityEditorDir)\Data\Managed\UnityEngine\*.dll" Private="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GameCompileCheck\IndieStudio.Game.CompileCheck.csproj" />
+    <ProjectReference Include="..\IndieStudio.Simulation.csproj" />
+  </ItemGroup>
+</Project>

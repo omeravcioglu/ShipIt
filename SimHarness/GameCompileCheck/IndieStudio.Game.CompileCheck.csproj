@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Type-checks the Unity game layer (Assets/IndieStudio/Game) against Unity's engine DLLs in a few
+    seconds, without launching the editor. Not a substitute for Unity's own compile — just a fast first pass.
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <UnityEditorDir Condition="'$(UnityEditorDir)' == ''">C:\Program Files\Unity\Hub\Editor\6000.0.32f1\Editor</UnityEditorDir>
+    <NoWarn>$(NoWarn);CS1701;CS1702</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Assets\IndieStudio\Game\**\*.cs" Exclude="..\..\Assets\IndieStudio\Game\Tests\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(UnityEditorDir)\Data\Managed\UnityEngine\*.dll" Private="false" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IndieStudio.Simulation.csproj" />
+  </ItemGroup>
+</Project>
