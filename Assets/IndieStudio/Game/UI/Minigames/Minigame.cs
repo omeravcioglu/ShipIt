@@ -220,14 +220,14 @@ namespace IndieStudio.Game.UI
             if (_game == null || !_playing) return;
             if (_game.IsOver)
             {
-                if (!_game.IsSolved || Time.realtimeSinceStartup - _overAt >= SolvedHold) Finish();
+                if (!_game.IsSolved || timer.now / 1000f - _overAt >= SolvedHold) Finish();
                 return;
             }
             _game.Advance(Mathf.Min(0.1f, timer.deltaTime / 1000f));
             UpdateTimer();
             if (!_game.IsOver) return;
             // A solved game shows what the player made for a moment; a game that ran out of time goes straight to the result.
-            _overAt = Time.realtimeSinceStartup;
+            _overAt = timer.now / 1000f; // panel time, like every other UI animation
             if (!_game.IsSolved) Finish();
         }
 
