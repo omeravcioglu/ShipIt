@@ -48,7 +48,7 @@
 | Testing | **NUnit**: 71 simulation tests, including bot-driven 2-year balance tests, plus 12 Play Mode tests on the real game |
 | Outside Unity | **.NET 8** harness that runs the simulation tests in about 5 seconds and type-checks the Unity layer and the Steam module without opening the editor |
 | Design tools | Python economy model (`Design/Tools/economy_sim.py`) for exploring strategies |
-| Marketing | Store art rendered from HTML, GIFs cut with ffmpeg from recorded gameplay, and a trailer with music synthesized in Python (`Marketing/Steam/trailer/music.py`) |
+| Marketing | Store art rendered from HTML, GIFs cut with ffmpeg from recorded gameplay, and a **1080p60 trailer**. A Play Mode test records each scene straight into ffmpeg while UI Toolkit runs on a virtual clock (exactly 1/60 s per frame), and logs the sound cues. A Python build cuts every segment to whole beats of a 96 BPM soundtrack synthesized in Python, with the cues mixed in. |
 
 ## What I built
 
