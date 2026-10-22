@@ -17,8 +17,8 @@ namespace IndieStudio.Simulation
     {
         /// <summary>"ISAV" (Indie Studio save), little-endian.</summary>
         const uint Magic = 0x56415349;
-        /// <summary>1: the first save format. 2: studio name, flow, coffee and the cat. 3: counters for achievements. 4: launch week. 5: Next Fest and demos.</summary>
-        public const int Version = 5;
+        /// <summary>1: the first save format. 2: studio name, flow, coffee and the cat. 3: counters for achievements. 4: launch week. 5: Next Fest and demos. 6: the edition (full game or free demo) and how the demo ended.</summary>
+        public const int Version = 6;
 
         public static void Write(GameState state, Stream stream) => Write(state, stream, Version);
 
@@ -137,6 +137,11 @@ namespace IndieStudio.Simulation
                 w.Write(st.CatPets);
                 w.Write(st.BrilliantSessions);
             }
+            if (version >= 6)
+            {
+                w.Write((int)s.Edition);
+                w.Write((int)s.DemoEnd);
+            }
         }
 
         static GameState ReadState(BinaryReader r, int version)
@@ -220,6 +225,11 @@ namespace IndieStudio.Simulation
             {
                 st.CatPets = r.ReadInt32();
                 st.BrilliantSessions = r.ReadInt32();
+            }
+            if (version >= 6)
+            {
+                s.Edition = (Edition)r.ReadInt32();
+                s.DemoEnd = (DemoEnd)r.ReadInt32();
             }
             return s;
         }

@@ -25,9 +25,12 @@ namespace IndieStudio.Game
         /// <summary>Forgets what was sent for the previous studio (a new or different studio was loaded).</summary>
         public void Reset() => _sent.Clear();
 
+        /// <summary>False in the demo: achievements belong to the full game (a Steam demo is its own app, without them).</summary>
+        public bool Enabled { get; set; } = true;
+
         public void Check(GameState state, bool quietly)
         {
-            if (state == null) return;
+            if (state == null || !Enabled) return;
             foreach (var achievement in AchievementCatalog.All)
             {
                 if (_sent.Contains(achievement.Id) || !achievement.IsEarned(state)) continue;

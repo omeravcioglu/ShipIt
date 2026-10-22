@@ -43,6 +43,34 @@ It all stays off, and the game plays offline, until Steamworks.NET is installed 
 and the sheet to fill in on the Steamworks site, are in [`Steam/README.md`](Steam/README.md). Store-page
 assets are in `Marketing/Steam/`.
 
+## The demo
+
+A free demo of chapter 1 that takes **15 to 20 minutes**: your first two weeks in the bedroom studio, and your first game.
+
+- **It opens with a welcome** (what the demo is, in three steps) and a **How to play** page: your day, building, gigs, staying fresh, shipping and the goal. How to play is in the menu for the full game too.
+- **Doug's tutorial runs as usual for the first day.** After it, his guide keeps pointing at the next step until the game is out: Sam's gig, every feature, a store page, the launch. Players can hide it.
+- **It's the simple game.** Tiny games only, at 70% of the full game's work (about 11 Build sessions). There are gigs, coffee, the cat, rest and launch day. scratch.io is the only store.
+  - The Dashboard, Ideas, Bank, You and Shop apps carry a lock and say what they do in the full game.
+  - Marketing, research and learning are left out of the day panel.
+  - There's no Vapor, no Next Fest and no achievements.
+- **The clock:** the HUD's goal reads "DEMO · 9 DAYS LEFT". Doug warns three days before the end, and the last night's button says "Sleep (ends the demo)".
+- **The end.** Launching your first game ends the demo, after its launch-day show. So does the morning after Sunday the 14th. Then the end card:
+  - It says "That's the end of the demo! … I hope you liked it!" (or "Your two weeks are up!"), with what you made: the game, launch-day copies, features, gigs and days.
+  - It lists what the full game adds.
+  - Its buttons: **Wishlist Ship It! on Steam** (the Steam overlay, or the browser), **Play the demo again** and **Quit**.
+  - Time stops there, and a saved finished demo opens at that card.
+- **Its own save:** `Saves/demo.isav`, under the product name "Ship It! Demo". A demo studio never replaces a full-game studio, and the full game ignores a demo save.
+
+**Play it in the editor:** turn on **Indie Studio → Play as the demo**, then press Play (turn it off again for the full game). Any build also starts as the demo with the command-line argument `-demo`.
+
+**Build it:** **Indie Studio → Build the Windows demo** writes `Builds/Demo/Windows/Ship It Demo.exe` (the scripting define `SHIPIT_DEMO`, product name "Ship It! Demo"). **Build the Windows game** writes `Builds/Game/Windows/Ship It.exe`. From the command line, with the editor closed:
+
+```bash
+"C:\Program Files\Unity\Hub\Editor\6000.0.32f1\Editor\Unity.exe" -batchmode -quit -projectPath . -executeMethod IndieStudio.EditorTools.GameBuilds.BuildWindowsDemoFromCommandLine -logFile Logs/build-demo.log
+```
+
+The rules are in `Simulation/Content/DemoRules.cs`. `DemoTests` checks them and plays 40 seeds with a time model of the minigames. A typical player ships on day 5, after about 16 minutes. A careful one takes about 15 minutes, and a careless one (weaker sessions, evenings off) ships on day 10 after about 20 minutes. Putting it on Steam (a demo is an app of its own) is in [`Steam/README.md`](Steam/README.md#the-demo).
+
 ## Project layout
 
 | Path | What it is |
@@ -54,7 +82,8 @@ assets are in `Marketing/Steam/`.
 | `Assets/IndieStudio/Steam/` | The Steam module (Steamworks.NET): sign-in, achievements, Steam Cloud. It compiles only once the package is installed (`Steam/README.md`). |
 | `Assets/IndieStudio/Game/UI/Drawing/` | Things USS can't draw, done with Painter2D: the cartoon `Avatar`, line `Icon`s (from SVG path data), `GamePreview` (your game, drawn from its genre, art style and progress), the cash-forecast chart, the cat, generated textures |
 | `Assets/IndieStudio/Game/Resources/IndieStudio/` | `Styles.uss` (the warm "sticker" look: all colors and layout), `Theme.tss`, and `Fonts/` (Lilita One, SIL OFL) |
-| `Assets/IndieStudio/Game/Tests/` | Play-mode tests. The smoke test boots the real game, then: names the studio and follows the tutorial; plays every minigame and every look of Wire It Up (relaxed too); brews a coffee and pets the cat; sleeps; launches a first game with its launch-day show; and opens every screen. The save tests autosave, continue in a new session and recover from a damaged save (in a temp folder). The platform tests use a fake Steam: the studio follows you to a second computer, a conflict asks which studio to keep, and achievements unlock with a toast. The Next Fest test signs up from the Project page, makes a demo session and shows the fest week. |
+| `Assets/IndieStudio/Game/Tests/` | Play-mode tests. The smoke test boots the real game, then: names the studio and follows the tutorial; plays every minigame and every look of Wire It Up (relaxed too); brews a coffee and pets the cat; sleeps; launches a first game with its launch-day show; and opens every screen. The save tests autosave, continue in a new session and recover from a damaged save (in a temp folder). The platform tests use a fake Steam: the studio follows you to a second computer, a conflict asks which studio to keep, and achievements unlock with a toast. The Next Fest test signs up from the Project page, makes a demo session and shows the fest week. The demo tests play the free demo from its welcome, past the closed apps and Doug's guide, to the launch and the end card. They also run out its two weeks, and check that its save stays apart from the full game's. |
+| `Assets/IndieStudio/Editor/` | Editor menus: branding, **Play as the demo**, and the Windows builds of the game and the demo (`GameBuilds`) |
 | `SimHarness/` | .NET projects that build and test the simulation **outside Unity** in seconds, and type-check the Unity layer and the Steam module |
 | `Steam/` | The Steamworks setup: steps, the achievements sheet and their icons (`AchievementIcons/`) |
 
@@ -66,7 +95,7 @@ assets are in `Marketing/Steam/`.
 dotnet test SimHarness/Tests
 ```
 
-It runs the same test files Unity uses: 71 tests. They cover the day/slot rules, flow, coffee, tired evenings, Next Fest and demos, launch week, player and critic reviews, achievements and the cloud-save decision. Save tests check that every field survives and that a loaded game plays on identically (older save versions still load). The balance tests print a two-year economy report per strategy.
+It runs the same test files Unity uses: 79 tests. They cover the day/slot rules, flow, coffee, tired evenings, Next Fest and demos, launch week, player and critic reviews, achievements, the cloud-save decision and the free demo (its rules and its 15–20 minutes). Save tests check that every field survives and that a loaded game plays on identically (older save versions still load). The balance tests print a two-year economy report per strategy.
 
 **Type-check the Unity layer against the engine DLLs, without opening the editor:**
 

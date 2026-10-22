@@ -63,9 +63,22 @@ namespace Steamworks
         public static void CancelAuthTicket(HAuthTicket hAuthTicket) { }
     }
 
+    public enum EOverlayToStoreFlag
+    {
+        k_EOverlayToStoreFlag_None = 0,
+        k_EOverlayToStoreFlag_AddToCart = 1,
+        k_EOverlayToStoreFlag_AddToCartAndShow = 2,
+    }
+
     public static class SteamFriends
     {
         public static string GetPersonaName() => "";
+        public static void ActivateGameOverlayToStore(AppId_t nAppID, EOverlayToStoreFlag eFlag) { }
+    }
+
+    public static class SteamUtils
+    {
+        public static bool IsOverlayEnabled() => false;
     }
 
     public static class SteamUserStats

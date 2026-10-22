@@ -13,7 +13,7 @@ namespace IndieStudio.Steam
     /// for a future game server. This assembly only compiles when the Steamworks.NET package is installed
     /// (Steam/README.md); without it, or when Steam isn't running, the game plays offline.
     /// </summary>
-    public sealed class SteamPlatform : IPlatform
+    public sealed class SteamPlatform : IPlatform, IStoreOverlay
     {
         /// <summary>Seconds between attempts to hand Steam an achievement it didn't take yet.</summary>
         const float RetrySeconds = 5f;
@@ -87,6 +87,14 @@ namespace IndieStudio.Steam
         };
 
         public bool IsAchievementUnlocked(string id) => !_disposed && SteamUserStats.GetAchievement(id, out bool achieved) && achieved;
+
+        /// <summary>Shows a game's store page in the Steam overlay (the demo's "Wishlist the full game").</summary>
+        public bool OpenStorePage(uint appId)
+        {
+            if (_disposed || !SteamUtils.IsOverlayEnabled()) return false;
+            SteamFriends.ActivateGameOverlayToStore(new AppId_t(appId), EOverlayToStoreFlag.k_EOverlayToStoreFlag_None);
+            return true;
+        }
 
         public bool UnlockAchievement(string id)
         {

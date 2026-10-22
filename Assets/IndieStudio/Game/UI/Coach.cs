@@ -18,6 +18,8 @@ namespace IndieStudio.Game.UI
         sealed class Step
         {
             public string Text;
+            /// <summary>The demo's guide: text worked out every refresh ("what's next"), instead of <see cref="Text"/>.</summary>
+            public Func<string> Guide;
             public Func<string> Target;
             /// <summary>When set, the step finishes by itself once this is true; otherwise it has a button.</summary>
             public Func<bool> Done;
@@ -34,6 +36,7 @@ namespace IndieStudio.Game.UI
         readonly Label _text;
         readonly Label _counter;
         readonly Button _next;
+        readonly Button _skip;
         readonly VisualElement _extra;
         readonly VisualElement _ring;
         readonly List<Step> _steps;
@@ -69,9 +72,9 @@ namespace IndieStudio.Game.UI
             _extra = Ui.El("coach__extra");
             _box.Add(_extra);
             var buttons = Ui.Row("coach__buttons");
-            var skip = Ui.Btn("Skip tutorial", Finish, "coach__skip");
-            skip.name = "coach-skip";
-            buttons.Add(skip);
+            _skip = Ui.Btn("Skip tutorial", Finish, "coach__skip");
+            _skip.name = "coach-skip";
+            buttons.Add(_skip);
             buttons.Add(Ui.Grow());
             _next = Ui.Btn("Next", Advance, "btn btn--mustard coach__next");
             _next.name = "coach-next";
@@ -105,7 +108,8 @@ namespace IndieStudio.Game.UI
             string hey = name != null ? $"Hey {name}, I'm Doug." : "Hey, I'm Doug.";
             bool FriendTaken() => State.Freelance.Gigs.Any(g => g.Client == ClientType.Friend && g.Status != GigStatus.Offered) || State.Freelance.ActiveCount > 0;
             bool GigWorked() => State.Freelance.Gigs.Any(g => g.Sessions > 0) || State.Freelance.Profile.CompletedGigs > 0;
-            return new List<Step>
+            bool demo = State.IsDemo;
+            var steps = new List<Step>
             {
                 new Step
                 {
@@ -117,15 +121,19 @@ namespace IndieStudio.Game.UI
                 },
                 new Step
                 {
-                    Text = "Up here is your goal: ship your first game. Click it any time to see the steps.",
+                    Text = demo
+                        ? "Up here is your goal for the demo: ship your first game, within two weeks. Click it any time to see the steps."
+                        : "Up here is your goal: ship your first game. Click it any time to see the steps.",
                     Target = () => "hud-goal",
                     Button = "Got it",
                 },
                 new Step
                 {
-                    Text = "And this is your runway. $5,000 lasts about three months, because $1,460 in bills leaves your account on the 1st of every month.",
+                    Text = demo
+                        ? "And this is your runway: how long your money lasts. $1,460 in bills leaves your account on the 1st of every month. The demo ends before then, so for now you're safe."
+                        : "And this is your runway. $5,000 lasts about three months, because $1,460 in bills leaves your account on the 1st of every month.",
                     Target = () => "hud-runway",
-                    Button = "Gulp",
+                    Button = demo ? "Phew" : "Gulp",
                 },
                 new Step
                 {
@@ -159,7 +167,9 @@ namespace IndieStudio.Game.UI
                 },
                 new Step
                 {
-                    Text = "Pick an idea, keep it Tiny, and choose an art style you can pull off. Pixel Art or Minimalist are safe. Then start it.",
+                    Text = demo
+                        ? "Pick an idea and an art style you can pull off: Pixel Art or Minimalist are safe. Then start it."
+                        : "Pick an idea, keep it Tiny, and choose an art style you can pull off. Pixel Art or Minimalist are safe. Then start it.",
                     Target = () => "start-project",
                     Done = () => State.Projects.Count > 0,
                 },
@@ -183,10 +193,87 @@ namespace IndieStudio.Game.UI
                 },
                 new Step
                 {
-                    Text = "That's the basics. Finish Sam's gig, build every feature, open a store page and launch. I'll be in the corner if you need advice. Good luck!",
+                    Text = demo
+                        ? "That's the basics! Finish Sam's gig, build every feature, open a store page and launch. Until your game is out, I'll keep pointing at what's next. Rather explore on your own? Click Hide tips."
+                        : "That's the basics. Finish Sam's gig, build every feature, open a store page and launch. I'll be in the corner if you need advice. Good luck!",
                     Button = "Thanks, Doug",
                 },
             };
+            if (demo)
+                steps.Add(new Step
+                {
+                    Guide = () => GuideText(out _),
+                    Target = () =>
+                    {
+                        GuideText(out string target);
+                        return target;
+                    },
+                    Done = () => State.ShippedGames >= 1 || State.DemoOver,
+                });
+            return steps;
+        }
+
+        /// <summary>
+        /// The demo's guide after the first day: the next thing to do on the way to launch, and what to click for it.
+        /// It follows the chapter's steps: Sam's gig, your game, every feature, a store page, the launch.
+        /// </summary>
+        string GuideText(out string target)
+        {
+            var s = State;
+            var sim = _studio.Sim;
+            var today = _studio.Today;
+            var sam = s.Freelance.Gigs.FirstOrDefault(g => g.Client == ClientType.Friend);
+            var project = s.ActiveProject;
+            bool projectOpen = _studio.Current is ProjectPage;
+
+            if (sim.IsNight)
+            {
+                target = "today-sleep";
+                return s.Day + 1 >= DemoRules.Days
+                    ? "That's today done, and it's the demo's last night. Sleep when you're ready: it ends the demo."
+                    : "That's today done. Go to sleep: mornings bring mail, payments and new offers.";
+            }
+            if (sam != null && sam.Status == GigStatus.Offered && s.Freelance.Profile.CompletedGigs == 0)
+            {
+                target = _studio.Current is GigsPage ? "accept-friend" : "dock-gigs";
+                return "Sam's gig is still waiting: open GigGrid and accept it. It's $180 for a few sessions of bug fixing.";
+            }
+            if (sam != null && sam.Status == GigStatus.Active)
+            {
+                target = today.OpenGroup == "gig" ? "gig-friend" : "act-gig";
+                double left = Math.Max(1, Math.Ceiling(sim.SessionsLeft(sam)));
+                return $"Finish Sam's gig: open Gig work and pick it. About {left:0} more session{(left > 1 ? "s" : "")}, and his $180 arrives two days after you deliver.";
+            }
+            if (project == null)
+            {
+                target = projectOpen ? "start-project" : "dock-project";
+                return "Now start your game: open the Project app, pick an idea and an art style, and start it.";
+            }
+            if (project.Status == ProjectStatus.InDevelopment)
+            {
+                target = today.OpenGroup == "build" ? "build-first" : "act-build";
+                return $"Keep building {project.Title}: {project.FeaturesDone} of {project.FeatureCount} features done. " +
+                       "Open Build your game and wire up the next one." + GuideTip();
+            }
+            if (!project.HasStorePage)
+            {
+                target = projectOpen ? "store-scratch" : "dock-project";
+                return $"Every feature of {project.Title} is built! Open the Project app and open a free scratch.io store page.";
+            }
+            target = projectOpen ? "project-launch" : "dock-project";
+            return $"{project.Title} has a store page. In the Project app, pick a price and launch it! A Polish session first squashes a few bugs, if you like.";
+        }
+
+        /// <summary>A small tip now and then while you build: coffee, the cat, rest.</summary>
+        string GuideTip()
+        {
+            var s = State;
+            if (GameCalendar.IsWeekend(s.Day)) return " It's the weekend: work costs a little extra burnout, so think about a lighter day.";
+            if (s.Founder.Burnout >= 10) return " You're getting tired: rest an evening to bring burnout down.";
+            if (s.Founder.Morale < Tuning.CatMoraleBelow && s.CatPettedDay != s.Day) return " Feeling low? Pet the cat in your room.";
+            if (s.Slot == 0 && !s.CoffeeReady && s.CoffeesToday == 0 && s.Day >= 1 && s.Day <= 3)
+                return " Tip: click the mug in your room to brew a coffee. Your next session counts ×1.15.";
+            return "";
         }
 
         public void Refresh()
@@ -204,8 +291,12 @@ namespace IndieStudio.Game.UI
                 return;
             }
             var step = _steps[Index];
-            _text.text = step.Text;
-            _counter.text = $"Tutorial · {Index + 1} of {_steps.Count}";
+            _text.text = step.Guide != null ? step.Guide() : step.Text;
+            int lessons = _steps.Count(st => st.Guide == null);
+            _counter.text = step.Guide != null
+                ? (State.IsDemo ? $"What's next · demo, {StudioUI.DemoDaysLeftText(State.Day)}" : "What's next")
+                : $"Tutorial · {Index + 1} of {lessons}";
+            _skip.text = step.Guide != null ? "Hide tips" : "Skip tutorial";
             _next.text = step.Button;
             _next.EnableInClassList("hidden", step.Done != null);
             if (_extraStep != Index || _extraSim != _studio.Sim)

@@ -53,6 +53,14 @@ namespace IndieStudio.Game.UI
                 body.Add(Ui.Empty("The studio is closed."));
                 return;
             }
+            if (s.DemoOver)
+            {
+                body.Add(Ui.Display("That's the demo!", "today__night-title"));
+                body.Add(Ui.Text(s.DemoEnd == DemoEnd.Shipped
+                    ? "Your first game is out. Thanks for playing!"
+                    : "The demo's two weeks are up. Thanks for playing!", "today__hint"));
+                return;
+            }
             if (Sim.IsNight) BuildNight(body);
             else
             {
@@ -134,13 +142,23 @@ namespace IndieStudio.Game.UI
             Group(body, "gig", "act-gig", Icons.Briefcase, "act-freelance", "Gig work", gigSub, GigOptions,
                 active.Select(g => Sim.FlowBonusFor(PlanBlock.Gig(g.Id))).DefaultIfEmpty(0).Max());
 
-            Group(body, "market", "act-market", Icons.Megaphone, "act-marketing", "Marketing", $"{Fmt.Num(s.Audience.Followers)} followers", MarketOptions);
-            body.Add(Row("act-research", Icons.Search, "act-research", "Research", "New ideas, and a sharper read on yours", null, false, false,
-                () => _studio.Play(PlanBlock.Research)));
-            Group(body, "learn", "act-learn", Icons.Graduation, "act-learn", "Learn", "Study a skill: slower now, faster later", LearnOptions,
-                LearnSkills.Select(k => Sim.FlowBonusFor(PlanBlock.Study(k))).Max());
+            if (!s.IsDemo)
+            {
+                Group(body, "market", "act-market", Icons.Megaphone, "act-marketing", "Marketing", $"{Fmt.Num(s.Audience.Followers)} followers", MarketOptions);
+                body.Add(Row("act-research", Icons.Search, "act-research", "Research", "New ideas, and a sharper read on yours", null, false, false,
+                    () => _studio.Play(PlanBlock.Research)));
+                Group(body, "learn", "act-learn", Icons.Graduation, "act-learn", "Learn", "Study a skill: slower now, faster later", LearnOptions,
+                    LearnSkills.Select(k => Sim.FlowBonusFor(PlanBlock.Study(k))).Max());
+            }
             body.Add(Row("act-rest", Icons.Moon, "act-rest", "Rest", $"Burnout {s.Founder.Burnout:0}. Rest brings it down.", null, false, false,
                 () => _studio.Play(PlanBlock.Rest)));
+            if (s.IsDemo)
+            {
+                var more = Ui.Pill(Icons.Lock, "Marketing, research and learning come with the full game", "pill--soft pill--wrap today__locked");
+                more.name = "today-locked";
+                _studio.Tooltip.Attach(more, () => "In the full game you can also post about your game to find players and wishlists, research new ideas, and study skills.");
+                body.Add(more);
+            }
         }
 
         /// <summary>Launch week's choices for a released game: hotfix, answer players, post (Design/10 §7).</summary>
@@ -495,11 +513,14 @@ namespace IndieStudio.Game.UI
             }
 
             int tomorrow = s.Day + 1;
-            var sleep = Ui.IconBtn(Icons.Bed, $"Sleep → {GameCalendar.DayNames[GameCalendar.DayOfWeek(tomorrow)]} {GameCalendar.DayOfMonth(tomorrow)}",
+            bool lastDemoNight = s.IsDemo && tomorrow >= DemoRules.Days;
+            var sleep = Ui.IconBtn(Icons.Bed, lastDemoNight ? "Sleep (ends the demo)" : $"Sleep → {GameCalendar.DayNames[GameCalendar.DayOfWeek(tomorrow)]} {GameCalendar.DayOfMonth(tomorrow)}",
                 _studio.Sleep, "btn btn--primary btn--big today__sleep", 22f);
             sleep.name = "today-sleep";
             body.Add(sleep);
-            string hint = GameCalendar.IsFirstOfMonth(tomorrow) ? $"Tomorrow is the 1st: {Fmt.Money(s.Finance.MonthlyRecurringTotal)} in bills."
+            string hint = lastDemoNight ? "This is the demo's last night."
+                : s.IsDemo && DemoRules.DaysLeft(tomorrow) <= DemoRules.WarningDaysLeft ? $"The demo has {StudioUI.DemoDaysLeftText(tomorrow)} after tonight."
+                : GameCalendar.IsFirstOfMonth(tomorrow) ? $"Tomorrow is the 1st: {Fmt.Money(s.Finance.MonthlyRecurringTotal)} in bills."
                 : GameCalendar.IsMonday(tomorrow) ? "Tomorrow is Monday: new gig offers arrive."
                 : "Mornings bring mail, payments and news.";
             body.Add(Ui.Text(hint, "today__hint"));

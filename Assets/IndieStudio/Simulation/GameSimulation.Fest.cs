@@ -49,6 +49,7 @@ namespace IndieStudio.Simulation
             error = null;
             var project = State.Projects.FirstOrDefault(p => p.Id == projectId);
             if (project == null || project.IsReleased || project.Status == ProjectStatus.Cancelled) { error = "Next Fest is for unreleased games."; return false; }
+            if (State.IsDemo) { error = "Next Fest comes with the full game."; return false; }
             if (project.Platform != StorePlatform.Vapor) { error = "Next Fest is on Vapor: open a Vapor page first."; return false; }
             if (project.FestDone) { error = "Next Fest is once per game, and this one has had its turn."; return false; }
             if (project.FestDay >= 0) { error = "Already signed up."; return false; }

@@ -84,7 +84,15 @@ namespace IndieStudio.Simulation
         public SimRandom RngIdeas;
         public SimRandom RngMarketing;
 
+        /// <summary>The full game, or the free demo (<see cref="DemoRules"/>): two weeks that end with your first launch.</summary>
+        public Edition Edition;
+        /// <summary>Why the demo is over; <see cref="DemoEnd.None"/> while it runs (and always in the full game).</summary>
+        public DemoEnd DemoEnd;
+
         public bool IsGameOver => GameOverReason != null;
+        public bool IsDemo => Edition == Edition.Demo;
+        /// <summary>The demo has ended: time no longer moves, and the game shows its end card.</summary>
+        public bool DemoOver => IsDemo && DemoEnd != DemoEnd.None;
 
         public Project ActiveProject =>
             Projects.FirstOrDefault(p => p.Status == ProjectStatus.InDevelopment || p.Status == ProjectStatus.ReadyToRelease);

@@ -67,6 +67,12 @@ A design this large needs its own lessons applied to it: **prototype the core lo
   - A week of wishlists follows, depending on how good the game and the demo are.
   - The bots don't enter fests, so the balance numbers are unchanged.
 
+- **A free demo** (22 Oct 2026; README, "The demo"): chapter 1 in 15–20 minutes, for the Steam page and Next Fest.
+  - **Rules** (`Content/DemoRules.cs`, `Edition` in the state, save v6): two weeks, ending at the first launch or the morning after day 14. Tiny games only, at ×0.7 work. scratch.io only, so no Vapor, Next Fest or achievements. A warning comes three days before the end.
+  - **UI:** a welcome card and a How to play page (in the full game's menu too). Locked apps say what they do in the full game. Marketing, research and learning are left out of the day panel. After the first day, Doug's guide points at the next step until launch. The end card sums up your two weeks, with Wishlist / Play again / Quit.
+  - **Builds:** the demo is a separate build (`SHIPIT_DEMO`, product name "Ship It! Demo", its own save) and a separate Steam app.
+  - **Length:** `DemoTests` plays 40 seeds against a time model of the minigames. A typical player ships on day 5 in about 16 minutes. A careless one (weaker sessions, evenings off) still ships, on day 10, in about 20 minutes.
+
 **Next (M2 remainder):** Chirp/Clipz/ViewTube as separate channels, and the live hour-by-hour launch dashboard. Both rework existing systems (marketing's single follower pool, the launch week), so they're worth a playtest of the current slice first.
 
 ## 1. Scope reality check

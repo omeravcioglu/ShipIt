@@ -15,6 +15,7 @@ namespace IndieStudio.Simulation
         {
             error = null;
             if (State.ActiveProject != null) { error = "Finish, release or cancel your current project first."; return null; }
+            if (State.IsDemo && scope != ProjectScope.Tiny) { error = "The demo is about your first Tiny game. Small games come with the full game."; return null; }
             var idea = State.Ideas.FirstOrDefault(i => i.Id == ideaId);
             if (idea == null || idea.Used) { error = "That idea is not available."; return null; }
 
@@ -40,6 +41,7 @@ namespace IndieStudio.Simulation
             var art = GameContent.ArtStyle(style);
             double basePw = scope == ProjectScope.Tiny ? Tuning.TinyBasePw : Tuning.SmallBasePw;
             if (scope == ProjectScope.Tiny && State.Lessons.Contains("ship_small")) basePw *= 0.9;
+            if (scope == ProjectScope.Tiny && State.IsDemo) basePw *= DemoRules.TinyWorkScale;
             if (idea.JamProven) basePw *= 0.9;
 
             var project = new Project
@@ -94,6 +96,7 @@ namespace IndieStudio.Simulation
             if (project == null || project.IsReleased || project.Status == ProjectStatus.Cancelled) { error = "No such project."; return false; }
             if (project.HasStorePage) { error = "This game already has a store page."; return false; }
             if (platform == StorePlatform.None) { error = "Pick a store."; return false; }
+            if (platform == StorePlatform.Vapor && State.IsDemo) { error = "Vapor pages and wishlists come with the full game. In the demo, launch on scratch.io: it's free and instant."; return false; }
 
             if (platform == StorePlatform.Vapor)
             {
@@ -150,7 +153,8 @@ namespace IndieStudio.Simulation
             Post("launch", MessageKind.Info, $"{project.Title} is out!",
                 $"Released on {store} at ${price:0.00}. Launch-week discount: {(project.Platform == StorePlatform.Vapor ? "10%" : "none")}.\n" +
                 $"Your forecast for the first month: {result.ForecastLow:0}–{result.ForecastHigh:0} copies. Morale +10.\n" +
-                "Launch week starts now: hotfixes count most in the first days, players want answers, and posts sell copies." +
+                (State.IsDemo ? "Your first game is out in the world."
+                    : "Launch week starts now: hotfixes count most in the first days, players want answers, and posts sell copies.") +
                 (leftFest ? "\nIt was signed up for Next Fest, which is for unreleased games, so it left the fest." : ""));
             CheckProgress();
             return true;

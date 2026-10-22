@@ -145,7 +145,9 @@ namespace IndieStudio.Game.UI
 
             var menu = Ui.IconBtn(Icons.Menu, "", ToggleMenu, "hud-alert hud-menu", 22f);
             menu.name = "hud-menu";
-            tooltip.Attach(menu, () => "Menu: your account and achievements, relaxed minigames, saving, the tutorial, your studio's name, a new studio.");
+            tooltip.Attach(menu, () => Sim.State.IsDemo
+                ? "Menu: how to play, relaxed minigames, the tutorial, your studio's name, starting the demo over, and the full game."
+                : "Menu: your account and achievements, how to play, relaxed minigames, saving, the tutorial, your studio's name, a new studio.");
             Root.Add(menu);
 
             _goalsPopover = Ui.El("goals-popover hidden");
@@ -232,13 +234,19 @@ namespace IndieStudio.Game.UI
             SetCount(_decisions, _decisionCount, s.Inbox.Pending.Count());
             SetCount(_mail, _mailCount, s.Inbox.UnreadCount);
 
-            var chapter = Sim.CurrentChapter;
-            _goalChapter.text = chapter.Steps.Count > 0 ? $"CHAPTER {chapter.Number} · GOAL" : "SANDBOX";
+            var chapter = GoalChapter;
+            _goalChapter.text = s.IsDemo
+                ? (s.ShippedGames > 0 ? "DEMO · COMPLETE" : s.DemoOver ? "DEMO · OVER" : $"DEMO · {StudioUI.DemoDaysLeftText(s.Day).ToUpperInvariant()}")
+                : chapter.Steps.Count > 0 ? $"CHAPTER {chapter.Number} · GOAL" : "SANDBOX";
+            _goal.EnableInClassList("hud-goal--demo", s.IsDemo);
             _goalText.text = chapter.Goal;
             _goalCount.text = chapter.Steps.Count > 0 ? $"{chapter.StepsDone(s)}/{chapter.Steps.Count}" : "";
             _goalCount.EnableInClassList("hidden", chapter.Steps.Count == 0);
             if (!_goalsPopover.ClassListContains("hidden")) BuildGoals();
         }
+
+        /// <summary>The chapter the goal shows. The demo is chapter 1 from start to end, even once its game is out.</summary>
+        ChapterDef GoalChapter => Sim.State.IsDemo ? ChapterCatalog.All[0] : Sim.CurrentChapter;
 
         string TimeTooltip()
         {
@@ -313,6 +321,10 @@ namespace IndieStudio.Game.UI
                 : "Your studio saves itself after every change.";
             _menuPopover.Add(Ui.Text(saved, "menu-note"));
             var buttons = Ui.Row("menu-buttons");
+            bool demo = Sim.State.IsDemo;
+            var howTo = Ui.Btn("How to play", _studio.ShowHowToPlay, "btn btn--small");
+            howTo.name = "menu-how-to-play";
+            buttons.Add(howTo);
             var tutorial = Ui.Btn("Replay the tutorial", () =>
             {
                 CloseMenus();
@@ -323,9 +335,15 @@ namespace IndieStudio.Game.UI
             var rename = Ui.Btn("Rename your studio", _studio.ShowNameStudio, "btn btn--small");
             rename.name = "menu-rename";
             buttons.Add(rename);
-            var fresh = Ui.Btn("Start a new studio…", _studio.ConfirmNewStudio, "btn btn--small btn--danger");
+            var fresh = Ui.Btn(demo ? "Restart the demo…" : "Start a new studio…", _studio.ConfirmNewStudio, "btn btn--small btn--danger");
             fresh.name = "menu-new";
             buttons.Add(fresh);
+            if (demo)
+            {
+                var wishlist = Ui.IconBtn(Icons.Heart, "Wishlist the full game", () => GameEdition.OpenFullGameStorePage(game.Platform), "btn btn--small btn--primary", 14f);
+                wishlist.name = "menu-wishlist";
+                buttons.Add(wishlist);
+            }
             if (!UnityEngine.Application.isEditor)
                 buttons.Add(Ui.Btn("Quit", () =>
                 {
@@ -349,6 +367,11 @@ namespace IndieStudio.Game.UI
             words.Add(Ui.Text(CloudStatus(game), "menu-account__sub"));
             head.Add(words);
             box.Add(head);
+            if (Sim.State.IsDemo)
+            {
+                box.Add(Ui.Text("This is the free demo: your first two weeks. Achievements come with the full game.", "menu-account__sub"));
+                return box;
+            }
             var achievements = Ui.IconBtn(Icons.Trophy, $"Achievements {game.Achievements.UnlockedCount}/{AchievementCatalog.All.Count}",
                 _studio.ShowAchievements, "btn btn--small menu-account__achievements", 16f);
             achievements.name = "menu-achievements";
@@ -372,7 +395,7 @@ namespace IndieStudio.Game.UI
         void BuildGoals()
         {
             var s = Sim.State;
-            var chapter = Sim.CurrentChapter;
+            var chapter = GoalChapter;
             _goalsPopover.Clear();
             _goalsPopover.Add(Ui.Text(chapter.Steps.Count > 0 ? $"CHAPTER {chapter.Number}: {chapter.Title.ToUpperInvariant()}" : "WHAT'S NEXT", "card__title"));
             _goalsPopover.Add(Ui.Display(chapter.Goal, "goals-popover__goal"));
@@ -388,6 +411,14 @@ namespace IndieStudio.Game.UI
                 _goalsPopover.Add(Ui.Text("You've finished every chapter written so far. Hiring, publishers and a real studio arrive in a future update.", "goals-popover__note"));
 
             _goalsPopover.Add(Ui.Divider());
+            if (s.IsDemo)
+            {
+                _goalsPopover.Add(Ui.Text("THE DEMO", "card__title"));
+                _goalsPopover.Add(Ui.Text(s.ShippedGames > 0
+                    ? "You shipped your first game: that's the demo complete."
+                    : $"Your first two weeks: {StudioUI.DemoDaysLeftText(s.Day)}. Doug points at what's next, and the full game carries on from here.", "goals-popover__note"));
+                return;
+            }
             _goalsPopover.Add(Ui.Text($"SIDE GOALS · {s.GoalsCompleted.Count}/{GoalCatalog.All.Count}", "card__title"));
             foreach (var goal in GoalCatalog.All.Where(g => !s.GoalsCompleted.ContainsKey(g.Id)).Take(4))
                 _goalsPopover.Add(GoalRow(goal.Title, false, false));
@@ -465,6 +496,10 @@ namespace IndieStudio.Game.UI
             button.Add(Ui.Text(page.Title, "dock-btn__label"));
             var badge = Ui.Text("", "badge hidden");
             button.Add(badge);
+            var lockTile = Ui.Tile(Icons.Lock, "dock-btn__lock hidden", 11f);
+            lockTile.pickingMode = PickingMode.Ignore;
+            button.Add(lockTile);
+            _studio.Tooltip.Attach(button, () => _studio.IsLocked(page) ? $"{page.Title}: in the full game. {_studio.FullGameNote(page)}" : null);
             _buttons[page] = button;
             _badges[page] = badge;
             Root.Add(button);
@@ -478,6 +513,12 @@ namespace IndieStudio.Game.UI
         public void Refresh()
         {
             var s = _studio.Sim.State;
+            foreach (var pair in _buttons)
+            {
+                bool locked = _studio.IsLocked(pair.Key);
+                pair.Value.EnableInClassList("dock-btn--locked", locked);
+                pair.Value.Q(className: "dock-btn__lock")?.EnableInClassList("hidden", !locked);
+            }
             foreach (var pair in _badges)
             {
                 string text = "";

@@ -11,6 +11,15 @@ namespace IndieStudio.Simulation
     {
         void PostWelcome()
         {
+            if (State.IsDemo)
+            {
+                Post("welcome", MessageKind.Info, "Day one",
+                    "You quit your job to make games. You have $5,000 in savings, a tired laptop, a cat and no audience.\n" +
+                    "This demo is your first two weeks: take a gig to pay the rent, build a tiny game one feature at a time, and launch it.\n" +
+                    "Every day has a morning, an afternoon and an evening, and nothing happens until you decide how to spend them. " +
+                    "Your friend Sam has a small gig for you in GigGrid.");
+                return;
+            }
             Post("welcome", MessageKind.Info, "Day one",
                 "You quit your job to make games. You have $5,000 in savings, a tired laptop and no audience.\n" +
                 "January's rent is paid. On the 1st of every month $1,460 leaves your account for rent, food and bills — " +
@@ -18,6 +27,19 @@ namespace IndieStudio.Simulation
                 "Every day has a morning, an afternoon and an evening, and nothing happens until you decide how to spend them: " +
                 "gigs earn money, Build makes your game, Marketing finds players, rest keeps burnout down. " +
                 "Your friend Sam has a small gig for you in GigGrid.");
+        }
+
+        /// <summary>The demo's heads-up: a few days are left and the game isn't out yet.</summary>
+        void PostDemoWarning()
+        {
+            var project = State.ActiveProject;
+            string where = project == null
+                ? "You haven't started a game yet: open the Project app, pick an idea and keep it Tiny."
+                : project.Status == ProjectStatus.ReadyToRelease
+                    ? $"{project.Title} is finished. Open a store page and launch it!"
+                    : $"{project.Title} has {project.FeaturesDone} of {project.FeatureCount} features. Build the rest, open a store page and launch it.";
+            Post("demo_days_left", MessageKind.Info, $"{DemoRules.WarningDaysLeft} days left in the demo",
+                $"The demo ends on the night of Sunday the 14th. {where}");
         }
 
         void RollWeeklyEvents(int day)

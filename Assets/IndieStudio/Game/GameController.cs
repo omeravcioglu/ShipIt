@@ -19,6 +19,8 @@ namespace IndieStudio.Game
         const float AutosaveDelay = 1f;
 
         public ulong Seed = 0;
+        /// <summary>The full game or the free demo (the real game passes <see cref="GameEdition.Current"/>).</summary>
+        public Edition Edition = Edition.Full;
         /// <summary>Where saves live; null keeps everything in memory (tests).</summary>
         public string SaveFolder;
         /// <summary>The platform (Steam or offline). The real game passes <see cref="Platforms.Shared"/>; without one, a forgetful offline platform is used (tests).</summary>
@@ -55,8 +57,8 @@ namespace IndieStudio.Game
 
             Settings = new GameSettings(SaveFolder != null);
             Platform = PlatformOverride ?? new OfflinePlatform(false);
-            Achievements = new AchievementTracker(Platform);
-            if (SaveFolder != null) Saves = new SaveStore(SaveFolder, Platform.Cloud);
+            Achievements = new AchievementTracker(Platform) { Enabled = Edition == Edition.Full };
+            if (SaveFolder != null) Saves = new SaveStore(SaveFolder, Platform.Cloud, GameEdition.SaveFileName(Edition));
 
             GameSimulation loaded = null;
             if (Saves != null && Saves.Exists)
@@ -67,6 +69,13 @@ namespace IndieStudio.Game
                 LoadedFromCloud = opening.FromCloud;
                 if (loaded != null) LoadProblem = opening.Problem;
                 else if (opening.Problem != null) LoadProblem = opening.Problem + " A new studio was started.";
+                if (loaded != null && loaded.State.Edition != Edition)
+                {
+                    // A studio from the other edition (the demo's save in the full game, or the other way round): start fresh.
+                    loaded = null;
+                    PendingConflict = null;
+                    LoadProblem = null;
+                }
             }
             if (loaded != null)
             {
@@ -89,7 +98,7 @@ namespace IndieStudio.Game
         public void NewGame(ulong seed)
         {
             Seed = seed;
-            Attach(new GameSimulation(seed));
+            Attach(new GameSimulation(seed, Edition));
             ResumedFromSave = false;
             LoadedFromCloud = false;
             Achievements?.Reset();

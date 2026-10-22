@@ -60,6 +60,37 @@ Store-page assets (capsules, screenshots, trailer, store text) are separate, in 
 
 Then start Steam, sign in, and press Play. The menu should say "Signed in to Steam as …".
 
+## The demo
+
+The free demo (README, "The demo") is the same project built with the scripting define `SHIPIT_DEMO`. On Steam a
+demo is **an app of its own**, tied to the full game. It shows up on Ship It!'s store page as a "Download Ship It!
+Demo" button. Players wishlist the full game, not the demo, and a demo costs no extra Steam Direct fee.
+
+1. **Create the demo app.** In Steamworks, open Ship It! (App ID 5379550). Then go to **All Associated Packages,
+   DLC, Demos and Tools**, and under **Demos** create a new demo named "Ship It! Demo". Steam gives it its own App ID.
+2. **Put that App ID in `Assets/IndieStudio/Steam/SteamSettings.cs`** as `DemoAppId`. A demo build uses
+   `DemoAppId`, and the full game uses `FullGameAppId`. When both are real IDs, set `RestartThroughSteam` to `true`.
+3. **Set the demo up in Steamworks:**
+   - **Installation → General:** a launch option for Windows (64-bit) running `Ship It Demo.exe`.
+   - **No achievements:** the demo doesn't unlock any.
+   - **Steam Cloud is optional.** The demo saves `demo.isav` and works without it. To carry demo studios between
+     computers, use the same quota as the full game (4,000,000 bytes, 10 files).
+   - Publish the settings.
+4. **Build it:** **Indie Studio → Build the Windows demo** writes `Builds/Demo/Windows/` (no `steam_appid.txt`, no
+   debug symbols).
+5. **Upload it with SteamPipe:**
+   - Use the Steamworks SDK's `tools/ContentBuilder`. In its `app_build` script, use the demo's App ID and its
+     first depot (the App ID + 1, created with the app), with `Builds/Demo/Windows` as the content root.
+   - Run `builder/steamcmd.exe +login <account> +run_app_build ..\scripts\app_build_<demo app id>.vdf +quit`.
+   - In **SteamPipe → Builds**, set the new build live on the `default` branch.
+6. **Review and release:** complete the demo's checklist and submit it for review. Once approved, release it from
+   the demo's page. It can go live before the full game's release date, which is the point of a demo (and what
+   Next Fest needs).
+
+The end card's **Wishlist Ship It! on Steam** button opens the full game's store page (5379550) in the Steam
+overlay. When the overlay is off, it opens the page in the browser. To try the demo with Steam in the editor, put
+the demo's App ID in `steam_appid.txt` and turn on **Indie Studio → Play as the demo**.
+
 ## Testing
 
 - **Automated** (no Steam needed):

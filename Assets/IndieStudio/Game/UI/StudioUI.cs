@@ -12,7 +12,7 @@ namespace IndieStudio.Game.UI
     /// the dock, and the overlays (tooltips, toasts, the tutorial coach, decisions and minigames). Built in code
     /// with UI Toolkit; styles live in Resources/IndieStudio/Styles.uss.
     /// </summary>
-    public sealed class StudioUI
+    public sealed partial class StudioUI
     {
         readonly GameController _game;
         readonly VisualElement _root;
@@ -144,6 +144,11 @@ namespace IndieStudio.Game.UI
 
         public void Show(Page page)
         {
+            if (IsLocked(page))
+            {
+                ShowLocked(page);
+                return;
+            }
             _current = page;
             _dock.SetActive(page);
             _hud.CloseMenus();
@@ -321,7 +326,9 @@ namespace IndieStudio.Game.UI
             _modalLayer.Clear();
             _modalLayer.pickingMode = PickingMode.Ignore;
             _toasts.Clear();
+            _demoEndShown = false;
             ShowHome();
+            if (Sim.State.IsDemo) ShowDemoIntro();
         }
 
         /// <summary>
@@ -335,7 +342,9 @@ namespace IndieStudio.Game.UI
                 ShowCloudConflict();
                 return;
             }
-            if (_game.ResumedFromSave) ShowWelcomeBack();
+            if (_game.ResumedFromSave && Sim.State.DemoOver) ShowDemoEnd();
+            else if (_game.ResumedFromSave) ShowWelcomeBack();
+            else if (Sim.State.IsDemo) ShowDemoIntro();
             else if (_game.LoadProblem != null)
             {
                 var modal = OpenSystemModal(MessageKind.Critical, Doug(Mood.Tired), "Your save couldn't be loaded", _game.LoadProblem);
@@ -358,6 +367,7 @@ namespace IndieStudio.Game.UI
                 ? $"Chapter {chapter.Number}: {chapter.Goal.ToLowerInvariant()} ({chapter.StepsDone(s)} of {chapter.Steps.Count} steps done)."
                 : "You've finished every chapter written so far.";
             string games = s.ShippedGames == 0 ? "" : s.ShippedGames == 1 ? " One game shipped." : $" {s.ShippedGames} games shipped.";
+            if (s.IsDemo) games += $" {DemoDaysLeftText(s.Day)} in the demo.";
             string hello = PlayerName != null ? $"Hi {PlayerName}! " : "";
             string body = $"{hello}It's {GameCalendar.Format(s.Day)}, {Fmt.SlotName(slot).ToLowerInvariant()}. " +
                           $"{Fmt.Money(s.Finance.Cash)} in the bank, {Fmt.Days(s.Finance.RunwayDays())} of runway.\n{goal}{games}" +
@@ -367,7 +377,7 @@ namespace IndieStudio.Game.UI
             var modal = OpenSystemModal(MessageKind.Info, Doug(Mood.Happy), "Welcome back to " + s.StudioName, body);
             AddChoices(modal,
                 ("Continue", "Pick up where you left off.", true, () => CloseSystemModal()),
-                ("Start a new studio", "A new seed, a new bedroom, $5,000.", false, ConfirmNewStudio));
+                (s.IsDemo ? "Start the demo over" : "Start a new studio", "A new seed, a new bedroom, $5,000.", false, ConfirmNewStudio));
         }
 
         /// <summary>
@@ -444,7 +454,7 @@ namespace IndieStudio.Game.UI
         {
             CloseSystemModal(false);
             _hud.CloseMenus();
-            var modal = OpenSystemModal(MessageKind.Critical, Doug(Mood.Panic), "Start a new studio?",
+            var modal = OpenSystemModal(MessageKind.Critical, Doug(Mood.Panic), Sim.State.IsDemo ? "Start the demo over?" : "Start a new studio?",
                 "Your current studio will be replaced by a new one, and the old save with it. This can't be undone.");
             AddChoices(modal,
                 ("Keep playing", null, false, () => CloseSystemModal()),
@@ -558,6 +568,11 @@ namespace IndieStudio.Game.UI
         void ShowNextModal()
         {
             if (_minigames.IsOpen || _systemModalOpen) return; // news waits until the session or the dialog is over
+            if (Sim.State.DemoOver)
+            {
+                if (!_demoEndShown) ShowDemoEnd();
+                return;
+            }
             if (Sim.State.IsGameOver)
             {
                 if (!_gameOverShown) ShowGameOver();

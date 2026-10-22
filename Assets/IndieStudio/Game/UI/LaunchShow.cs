@@ -70,7 +70,9 @@ namespace IndieStudio.Game.UI
             stats.Add(vapor
                 ? Fixed("WISHLISTS AT LAUNCH", Fmt.Num(project.Result.LaunchWishlists))
                 : Fixed("FOLLOWERS", Fmt.Num(s.Audience.Followers)));
-            stats.Add(Ui.Text("Day one, as the store estimates it. Launch week starts now: hotfixes count most in the first days, players want answers, and posts sell copies.", "launch__note"));
+            stats.Add(Ui.Text(s.IsDemo
+                ? "Day one, as the store estimates it. Real players are trying something you made."
+                : "Day one, as the store estimates it. Launch week starts now: hotfixes count most in the first days, players want answers, and posts sell copies.", "launch__note"));
             main.Add(stats);
             panel.Add(main);
 
@@ -86,7 +88,7 @@ namespace IndieStudio.Game.UI
             panel.Add(reviewList);
 
             var buttons = Ui.Row("launch__buttons");
-            var done = Ui.IconBtn(Icons.ArrowRight, "Back to work", close, "btn btn--primary btn--big", 20f);
+            var done = Ui.IconBtn(Icons.ArrowRight, s.IsDemo ? "Continue" : "Back to work", close, "btn btn--primary btn--big", 20f);
             done.name = "launch-done";
             buttons.Add(done);
             panel.Add(buttons);

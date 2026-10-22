@@ -20,8 +20,9 @@ namespace IndieStudio.Game
         {
             if (SceneManager.GetActiveScene().name != MainSceneName) return;
             if (Object.FindAnyObjectByType<GameController>() != null) return;
-            CarryOverOldSave();
-            Create(0, null, DefaultSaveFolder, Platforms.Shared);
+            var edition = GameEdition.Current;
+            if (edition == Simulation.Edition.Full) CarryOverOldSave(); // the demo has its own folder and save, and no old saves
+            Create(0, null, DefaultSaveFolder, Platforms.Shared, edition);
         }
 
         /// <summary>
@@ -51,15 +52,18 @@ namespace IndieStudio.Game
         /// <paramref name="saveFolder"/> it continues the save found there and autosaves; without one nothing is
         /// written to disk. The real game passes <see cref="Platforms.Shared"/> (Steam, or offline); tests pass a fake
         /// or nothing (a forgetful offline platform, so they never touch the player's Steam account or settings).
+        /// <paramref name="edition"/> picks the full game or the free demo.
         /// </summary>
-        public static GameController Create(ulong seed, RenderTexture targetTexture, string saveFolder = null, IPlatform platform = null)
+        public static GameController Create(ulong seed, RenderTexture targetTexture, string saveFolder = null, IPlatform platform = null,
+            Simulation.Edition edition = Simulation.Edition.Full)
         {
-            var go = new GameObject("Indie Studio");
+            var go = new GameObject(edition == Simulation.Edition.Demo ? "Indie Studio (demo)" : "Indie Studio");
             go.SetActive(false);
             var document = go.AddComponent<UIDocument>();
             document.panelSettings = CreatePanelSettings(targetTexture);
             var controller = go.AddComponent<GameController>();
             controller.Seed = seed;
+            controller.Edition = edition;
             controller.SaveFolder = saveFolder;
             controller.PlatformOverride = platform;
             go.SetActive(true);

@@ -10,9 +10,10 @@ namespace IndieStudio.Simulation
     /// </summary>
     public sealed partial class GameSimulation
     {
-        public GameSimulation(ulong seed)
+        /// <param name="edition">The full game, or the free demo (<see cref="DemoRules"/>).</param>
+        public GameSimulation(ulong seed, Edition edition = Edition.Full)
         {
-            State = new GameState { Seed = seed };
+            State = new GameState { Seed = seed, Edition = edition };
             State.RngGigs = Stream(seed, "gigs", 1);
             State.RngEvents = Stream(seed, "events", 2);
             State.RngSales = Stream(seed, "sales", 3);
@@ -45,6 +46,10 @@ namespace IndieStudio.Simulation
         /// <summary>0 = morning, 1 = afternoon, 2 = evening, 3 = night (every slot of the day is used).</summary>
         public int Slot => State.Slot;
         public bool IsNight => State.Slot >= WeekPlan.BlocksPerDay;
+        public bool IsDemo => State.IsDemo;
+
+        /// <summary>Time no longer moves: the studio closed, or the demo is over.</summary>
+        bool Stopped => State.IsGameOver || State.DemoOver;
 
         /// <summary>Raised for every new inbox message.</summary>
         public event Action<Message> MessagePosted;
@@ -88,8 +93,13 @@ namespace IndieStudio.Simulation
         /// </summary>
         public void StartDay()
         {
-            if (State.IsGameOver || State.DayStarted) return;
+            if (Stopped || State.DayStarted) return;
             int day = State.Day;
+            if (State.IsDemo && day >= DemoRules.Days)
+            {
+                State.DemoEnd = DemoEnd.OutOfTime; // the demo's two weeks are up: this morning never starts
+                return;
+            }
             State.DayStarted = true;
             State.Slot = 0;
             State.Today.Clear();
@@ -103,6 +113,7 @@ namespace IndieStudio.Simulation
             if (State.IsGameOver) return;
             if (day > 0 && GameCalendar.IsMonday(day)) OnWeekStart(day);
             if (State.Founder.IsResting(day)) State.Stats.VacationDays++;
+            if (State.IsDemo && day == DemoRules.Days - DemoRules.WarningDaysLeft && State.ShippedGames == 0) PostDemoWarning();
         }
 
         /// <summary>The activity the current slot must be (a rest day, the day job, a jam), or null when it's your choice.</summary>
@@ -116,9 +127,9 @@ namespace IndieStudio.Simulation
         /// </summary>
         public SlotReport PerformSlot(PlanBlock activity, double performance = 1.0)
         {
-            if (State.IsGameOver) return null;
+            if (Stopped) return null;
             if (!State.DayStarted) StartDay();
-            if (State.IsGameOver || State.Slot >= WeekPlan.BlocksPerDay) return null;
+            if (Stopped || State.Slot >= WeekPlan.BlocksPerDay) return null;
 
             int day = State.Day, slot = State.Slot;
             var forced = ForcedBlock(day, slot);
@@ -157,7 +168,7 @@ namespace IndieStudio.Simulation
         /// <summary>"Call it a day": every remaining slot of today becomes rest.</summary>
         public void RestForTheDay()
         {
-            while (!State.IsGameOver && State.DayStarted && State.Slot < WeekPlan.BlocksPerDay) PerformSlot(PlanBlock.Rest);
+            while (!Stopped && State.DayStarted && State.Slot < WeekPlan.BlocksPerDay) PerformSlot(PlanBlock.Rest);
         }
 
         /// <summary>
@@ -166,10 +177,10 @@ namespace IndieStudio.Simulation
         /// </summary>
         public void EndDay()
         {
-            if (State.IsGameOver) return;
+            if (Stopped) return;
             if (!State.DayStarted) StartDay();
             RestForTheDay();
-            if (State.IsGameOver) return;
+            if (Stopped) return;
 
             int day = State.Day;
             ProcessSales(day);
@@ -197,23 +208,23 @@ namespace IndieStudio.Simulation
         /// <summary>Plays the rest of the day from the repeating week plan (bots, tests and balancing).</summary>
         public void AdvanceDay()
         {
-            if (State.IsGameOver) return;
+            if (Stopped) return;
             if (!State.DayStarted) StartDay();
-            while (!State.IsGameOver && State.Slot < WeekPlan.BlocksPerDay)
+            while (!Stopped && State.Slot < WeekPlan.BlocksPerDay)
                 PerformSlot(State.Plan[GameCalendar.DayOfWeek(State.Day), State.Slot]);
             EndDay();
         }
 
         public void AdvanceDays(int days)
         {
-            for (int i = 0; i < days && !State.IsGameOver; i++) AdvanceDay();
+            for (int i = 0; i < days && !Stopped; i++) AdvanceDay();
         }
 
         /// <summary>Runs until the next Monday.</summary>
         public void AdvanceToNextWeek()
         {
             do AdvanceDay();
-            while (!State.IsGameOver && !GameCalendar.IsMonday(State.Day));
+            while (!Stopped && !GameCalendar.IsMonday(State.Day));
         }
 
         // ------------------------------------------------------------------ commands: the week plan (bots) and time off
@@ -317,6 +328,7 @@ namespace IndieStudio.Simulation
             if (State.IsGameOver) return;
             CheckGoals(State.Day);
             CheckChapter();
+            if (State.IsDemo && State.DemoEnd == DemoEnd.None && State.ShippedGames >= 1) State.DemoEnd = DemoEnd.Shipped;
         }
 
         public ChapterDef CurrentChapter => ChapterCatalog.All[Math.Min(State.Chapter, ChapterCatalog.All.Count - 1)];

@@ -43,7 +43,7 @@ namespace IndieStudio.Game.Tests
                 foreach (var old in Directory.GetFiles(_folder, "*.png"))
                 {
                     string file = Path.GetFileName(old);
-                    if (!file.StartsWith("save_") && !file.StartsWith("steam_") && !file.StartsWith("fest_")) File.Delete(old);
+                    if (!file.StartsWith("save_") && !file.StartsWith("steam_") && !file.StartsWith("fest_") && !file.StartsWith("demo_")) File.Delete(old);
                 }
             }
 

@@ -72,8 +72,16 @@ namespace IndieStudio.Game.UI
             var scopeRow = Ui.Row("wrap");
             scopeRow.Add(ChoiceButton("Tiny", _scope == ProjectScope.Tiny, () => _scope = ProjectScope.Tiny,
                 "A handful of features: two or three weeks alongside gigs. Cheap to fail, great to learn from."));
-            scopeRow.Add(ChoiceButton("Small", _scope == ProjectScope.Small, () => _scope = ProjectScope.Small,
-                "About sixty features: a year of focused work alongside gigs. A real indie game, worth a Vapor page and a proper launch. Too big for evenings after a day job."));
+            if (s.IsDemo)
+            {
+                _scope = ProjectScope.Tiny;
+                var small = ChoiceButton("Small (full game)", false, () => { }, "Small games, about sixty features and a real indie launch, come with the full game.");
+                small.SetEnabled(false);
+                scopeRow.Add(small);
+            }
+            else
+                scopeRow.Add(ChoiceButton("Small", _scope == ProjectScope.Small, () => _scope = ProjectScope.Small,
+                    "About sixty features: a year of focused work alongside gigs. A real indie game, worth a Vapor page and a proper launch. Too big for evenings after a day job."));
             scopeCard.Add(scopeRow);
             scopeCard.Add(Ui.Text(_scope == ProjectScope.Tiny ? "Tiny: finish something, learn everything." : "Small: a real indie game. A long road alone.", "small muted"));
             choices.Add(scopeCard);
@@ -278,9 +286,15 @@ namespace IndieStudio.Game.UI
             if (!project.HasStorePage)
             {
                 store.Add(Ui.Text("No store page yet. Wishlists only start once people can find your game.", "muted"));
-                var scratch = Command("Open a scratch.io page (free)", () => Sim.OpenStorePage(project.Id, StorePlatform.ScratchIo, out _));
+                var scratch = Command("Open a scratch.io page (free)", () => Sim.OpenStorePage(project.Id, StorePlatform.ScratchIo, out _), s.IsDemo ? "btn btn--primary" : "btn");
+                scratch.name = "store-scratch";
                 Why(scratch, () => "Free and instant. Tiny audience, no wishlists, weekly payouts. Fine for a first tiny game.");
                 store.Add(scratch);
+                if (s.IsDemo)
+                {
+                    store.Add(Ui.Text("Vapor pages, wishlists and Next Fest come with the full game.", "small muted"));
+                    return store;
+                }
                 var vapor = Command($"Open a Vapor page ({Fmt.Money(Tuning.VaporStoreFee)})", () => Sim.OpenStorePage(project.Id, StorePlatform.Vapor, out _), "btn btn--primary");
                 vapor.SetEnabled(project.Progress >= 0.25);
                 Why(vapor, () => "The big PC store. Marketing turns into wishlists, and wishlists turn into launch sales.\n" +

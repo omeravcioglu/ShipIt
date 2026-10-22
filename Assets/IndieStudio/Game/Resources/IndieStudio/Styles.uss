@@ -2461,5 +2461,102 @@ Label {
 .fest__title { margin-bottom: 4px; }
 .fest-card { background-color: #DDF3F6; }
 
+/* ================================================================ the free demo and how to play */
+
+/* the HUD's goal says "DEMO · 9 DAYS LEFT" */
+.hud-goal--demo .hud-goal__chapter { color: var(--mustard); }
+
+/* apps the demo keeps closed: dimmed, with a little lock */
+.dock-btn--locked > .dock-btn__tile { opacity: 0.4; }
+.dock-btn--locked > .dock-btn__label { color: #A88B74; }
+.dock-btn--locked:hover > .dock-btn__tile { translate: 0 0; }
+.dock-btn__lock {
+    position: absolute;
+    top: -4px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: var(--ink);
+    background-color: var(--mustard);
+}
+
+.today__locked { margin: 10px 0 0 0; }
+
+/* the welcome card: three steps */
+.demo-steps { flex-direction: row; margin: 14px 12px 0 24px; }
+.demo-step {
+    flex-grow: 1;
+    flex-basis: 0;
+    padding: 12px 14px;
+    margin-right: 12px;
+    border-radius: 16px;
+    border-width: 3px 3px 6px 3px;
+    border-color: var(--ink);
+    background-color: var(--cream);
+}
+.demo-step__head { flex-direction: row; align-items: center; margin-bottom: 6px; }
+.demo-step__number {
+    width: 26px;
+    height: 26px;
+    margin-right: 8px;
+    border-radius: 13px;
+    background-color: var(--ink);
+    color: var(--cream);
+    font-size: 14px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+.demo-step__tile { width: 34px; height: 34px; border-radius: 10px; }
+.demo-step__title { font-size: 20px; margin-bottom: 2px; }
+.demo-step__text { font-size: 13px; color: var(--ink-soft); white-space: normal; }
+
+/* how to play: six cards, two rows of three (a row's cards share a height) */
+.modal--howto { width: 1240px; max-width: 94%; }
+.howto { max-height: 470px; margin: 12px 18px 0 18px; }
+.howto__row { flex-direction: row; align-items: stretch; }
+.howto__card {
+    flex-grow: 1;
+    flex-basis: 0;
+    align-items: flex-start;
+    padding: 10px 12px;
+    margin: 0 6px 12px 6px;
+    border-radius: 16px;
+    border-width: 3px 3px 5px 3px;
+    border-color: var(--ink);
+    background-color: var(--cream);
+}
+.howto__tile { margin-right: 12px; }
+.howto__words { flex-grow: 1; flex-shrink: 1; }
+.howto__title { font-size: 19px; margin-bottom: 2px; }
+.howto__text { font-size: 13px; color: var(--ink-soft); white-space: normal; }
+
+/* the end of the demo */
+.modal--demo-end { width: 980px; }
+.modal--demo-end > .modal__head { background-color: var(--mustard-light); }
+.demo-end__stats { flex-direction: row; align-items: stretch; margin: 14px 18px 0 24px; }
+.demo-end__stat {
+    flex-grow: 1;
+    flex-basis: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 6px;
+    margin-right: 10px;
+    border-radius: 14px;
+    border-width: 3px 3px 5px 3px;
+    border-color: var(--ink);
+    background-color: var(--cream);
+}
+.demo-end__stat--wide { flex-grow: 2; background-color: var(--teal); }
+.demo-end__stat--wide > .demo-end__value,
+.demo-end__stat--wide > .demo-end__label { color: var(--cream); }
+.demo-end__value { font-size: 26px; -unity-text-align: middle-center; white-space: normal; }
+.demo-end__label { font-size: 11px; -unity-font-style: bold; letter-spacing: 0.6px; color: var(--muted); -unity-text-align: middle-center; }
+.demo-end__more { margin: 14px 24px 0 24px; }
+.demo-end__kicker { font-size: 11px; -unity-font-style: bold; letter-spacing: 1.2px; color: var(--terracotta); margin-bottom: 6px; }
+.demo-end__chips { margin-right: -6px; }
+.demo-end__chip { margin: 0 6px 6px 0; }
+
 /* last, so it wins every tie */
 .hidden { display: none; }

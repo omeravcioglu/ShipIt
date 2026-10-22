@@ -44,17 +44,23 @@ namespace IndieStudio.Game
     /// </summary>
     public sealed class SaveStore
     {
+        /// <summary>The full game's save file (locally and in the cloud).</summary>
         public const string FileName = "studio.isav";
+        /// <summary>The demo's save file: it never touches a full-game studio, even in the same folder.</summary>
+        public const string DemoFileName = "demo.isav";
         readonly ICloudStorage _cloud;
 
-        public SaveStore(string folder, ICloudStorage cloud = null)
+        public SaveStore(string folder, ICloudStorage cloud = null, string fileName = FileName)
         {
             Folder = folder;
             _cloud = cloud;
+            Name = fileName;
         }
 
         public string Folder { get; }
-        public string FilePath => Path.Combine(Folder, FileName);
+        /// <summary>The save's file name, here and in the cloud.</summary>
+        public string Name { get; }
+        public string FilePath => Path.Combine(Folder, Name);
         string BackupPath => FilePath + ".bak";
         string TempPath => FilePath + ".tmp";
         /// <summary>The fingerprint of the version this computer and the cloud last agreed on.</summary>
@@ -71,7 +77,7 @@ namespace IndieStudio.Game
         /// <summary>Set when the last upload failed (the save is still safe on this computer).</summary>
         public string CloudProblem { get; private set; }
 
-        public bool Exists => File.Exists(FilePath) || File.Exists(BackupPath) || File.Exists(TempPath) || (CloudEnabled && _cloud.Exists(FileName));
+        public bool Exists => File.Exists(FilePath) || File.Exists(BackupPath) || File.Exists(TempPath) || (CloudEnabled && _cloud.Exists(Name));
 
         public void Write(GameSimulation sim)
         {
@@ -104,7 +110,7 @@ namespace IndieStudio.Game
         void Upload(byte[] data)
         {
             if (!CloudEnabled || data == null) return;
-            if (_cloud.Write(FileName, data))
+            if (_cloud.Write(Name, data))
             {
                 RememberSynced(data);
                 LastUploaded = DateTime.Now;
@@ -149,9 +155,9 @@ namespace IndieStudio.Game
 
             GameSimulation cloud = null;
             byte[] cloudBytes = null;
-            if (CloudEnabled && _cloud.Exists(FileName))
+            if (CloudEnabled && _cloud.Exists(Name))
             {
-                cloudBytes = _cloud.Read(FileName);
+                cloudBytes = _cloud.Read(Name);
                 cloud = cloudBytes != null ? TryParse(cloudBytes, out _) : null;
                 if (cloud == null)
                 {
@@ -184,7 +190,7 @@ namespace IndieStudio.Game
                     {
                         Local = local, Cloud = cloud, LocalBytes = localBytes, CloudBytes = cloudBytes,
                         LocalSaved = File.Exists(FilePath) ? File.GetLastWriteTime(FilePath) : (DateTime?)null,
-                        CloudSaved = _cloud.Timestamp(FileName),
+                        CloudSaved = _cloud.Timestamp(Name),
                     };
                     break;
             }

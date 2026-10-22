@@ -98,10 +98,11 @@ namespace IndieStudio.Game.UI
 
             var poster = Hotspot(stage, "dio-poster", () =>
                 {
-                    if (State.ActiveProject != null) Studio.Show<ProjectPage>();
+                    if (State.ActiveProject != null || State.IsDemo) Studio.Show<ProjectPage>();
                     else Studio.Show<IdeasPage>();
                 },
-                () => State.ActiveProject != null ? $"The poster for {State.ActiveProject.Title}. Click to open the project." : "Room for your next game's poster. Click to browse your ideas.");
+                () => State.ActiveProject != null ? $"The poster for {State.ActiveProject.Title}. Click to open the project."
+                    : State.IsDemo ? "Room for your first game's poster. Click to start it." : "Room for your next game's poster. Click to browse your ideas.");
             _posterArt = Add(poster, "dio-poster__art");
             Add(_posterArt, "dio-poster__sun");
             Add(_posterArt, "dio-poster__sea");
