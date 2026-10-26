@@ -2,6 +2,8 @@
 
 **A cozy but honest management sim about going indie, made in Unity 6.** You start with a bedroom, a laptop, a cat and $5,000. You take freelance gigs to pay the rent, build your game one feature at a time through hands-on minigames, and decide when to quit your day job.
 
+**[Coming soon on Steam](https://store.steampowered.com/app/5379550/Ship_It_Indie_Studio_Simulator/)**: wishlist it there.
+
 | | |
 |---|---|
 | ![The room: the day panel, the flow streak, the cat and the coffee](Marketing/Steam/screenshots/01_12_room_coffee_cat_flow.png) | ![Wire It Up: building a feature as a connection puzzle](Marketing/Steam/screenshots/02_10_minigame_wire_it_up.png) |
@@ -32,8 +34,12 @@
 - Four chapters of goals, 24 achievements, and an Old Dev Doug tutorial.
 
 **Status:** milestone M1, a playable slice of the solo "Bedroom Developer" years from the design.
+- **A free demo** of chapter 1 is built from the same project: your first two weeks in the bedroom studio and your first game, in 15 to 20 minutes.
+  - It's the simple game: Tiny games only, one store, and no marketing, research, Next Fest or achievements. The locked apps say what they do in the full game.
+  - After the first day, Old Dev Doug's guide points at the next step until launch.
+  - Launching your first game, or the morning after day 14, ends it on a card that sums up what you made, with a button to wishlist the full game.
 - The game saves itself and is prepared for Steam: sign-in, 24 achievements and Steam Cloud saves.
-- A Steamworks app exists, and the store page text, art, GIFs and trailer are made.
+- The [Steam store page](https://store.steampowered.com/app/5379550/Ship_It_Indie_Studio_Simulator/) is live as **Coming soon**, with its text, art, GIFs and trailer.
 - The full design (21 documents) goes much further: a team, publishers, franchises and more.
 
 ## Tech stack
@@ -44,15 +50,16 @@
 | UI | **UI Toolkit, built entirely in code**, with a warm "sticker" look in USS (`Styles.uss`, `Theme.tss`). **Painter2D** draws what USS can't. |
 | Game rules | Plain C# with no UnityEngine references, deterministic per seed |
 | Saving | Autosave a second after every change and on quit, backup recovery, versioned saves; **Steam Cloud** with a conflict prompt |
+| Editions | One project builds the full game and the free demo (scripting define `SHIPIT_DEMO`). Each has its own product name and save, and the demo's rules live in one file. |
 | Platform | **Steamworks.NET** module: sign-in, achievements, Steam Cloud, an auth ticket for a future server. It compiles only once the package is installed; offline otherwise. |
-| Testing | **NUnit**: 71 simulation tests, including bot-driven 2-year balance tests, plus 12 Play Mode tests on the real game |
+| Testing | **NUnit**: 79 simulation tests, including bot-driven 2-year balance tests and the demo's length, plus 15 Play Mode tests on the real game |
 | Outside Unity | **.NET 8** harness that runs the simulation tests in about 5 seconds and type-checks the Unity layer and the Steam module without opening the editor |
 | Design tools | Python economy model (`Design/Tools/economy_sim.py`) for exploring strategies |
 | Marketing | Store art rendered from HTML, GIFs cut with ffmpeg from recorded gameplay, and a **1080p60 trailer**. A Play Mode test records each scene straight into ffmpeg while UI Toolkit runs on a virtual clock (exactly 1/60 s per frame), and logs the sound cues. A Python build cuts every segment to whole beats of a 96 BPM soundtrack synthesized in Python, with the cues mixed in. |
 
 ## What I built
 
-All of it. The game code is **`Assets/IndieStudio/`**: 90 C# scripts, about 19k lines.
+All of it. The game code is **`Assets/IndieStudio/`**: 96 C# scripts, about 21k lines.
 
 | System | Where |
 |---|---|
@@ -62,6 +69,7 @@ All of it. The game code is **`Assets/IndieStudio/`**: 90 C# scripts, about 19k 
 | The UI, built in code: the day panel, the tutorial coach, activities, the launch-day show, confetti, achievements | `Game/UI/` (`TodayPanel`, `Coach`, `Activities`, `LaunchShow`, `Celebrate`, `AchievementView`) |
 | Six minigames | `Game/UI/Minigames/` (`WireItUp`, `BugSquash`, `PixelMatch`, `TypoHunt`, `SynthTuner`, `FeedbackSort`) |
 | Vector drawing with Painter2D | `Game/UI/Drawing/` |
+| The free demo: its rules, the welcome and How to play pages, the guide, the end card, and the builds of both editions | `Simulation/Content/DemoRules.cs`, `Game/GameEdition.cs`, `Game/UI/StudioUI.Demo.cs`, `Editor/GameBuilds.cs` |
 | Steam | `Steam/` (Steamworks.NET), with a fake Steam for tests |
 | Tests | `Simulation/Tests/` (rules, full game flows, balance) and `Game/Tests/` (Play Mode) |
 
@@ -93,7 +101,8 @@ Outside the Unity project:
   - brews coffee, pets the cat and launches a game;
   - opens every screen.
 
-  Platform tests use a fake Steam: the studio follows you to a second computer, and a conflict asks which studio to keep.
+  Platform tests use a fake Steam: the studio follows you to a second computer, and a conflict asks which studio to keep. `DemoUiTests` plays the demo through the real UI, from the welcome to the end card, and checks that it keeps its own save.
+- **`Simulation/Tests/DemoTests.cs`:** plays the demo on 40 seeds against a time model of the minigames. A typical player ships on day 5 after about 16 minutes, and a careless one still ships, on day 10, in about 20.
 - **`SimHarness/`:** type-checks the Unity layer against the engine DLLs, and the Steam module against a Steamworks stand-in, without the editor.
 
 ## Scenes
@@ -112,7 +121,7 @@ No Asset Store content. Everything is original except:
 
 - [`PROJECT_README.md`](PROJECT_README.md): the project's own notes, covering how to play, the project layout, how to test, and balance at a glance
 - [`Design/`](Design/README.md): the game design document (21 docs) and `Tools/economy_sim.py`
-- [`Steam/README.md`](Steam/README.md): Steamworks setup and the achievements sheet
+- [`Steam/README.md`](Steam/README.md): Steamworks setup, the demo's Steam app and the achievements sheet
 - `Marketing/Steam/store_text.md`: the store page text
 
 ## About this repository
