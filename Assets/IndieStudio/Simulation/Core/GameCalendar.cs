@@ -13,6 +13,8 @@ namespace IndieStudio.Simulation
 
         public static readonly string[] DayNames = { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
         public static readonly string[] MonthNames = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+        public static readonly string[] FullMonthNames =
+            { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" };
         public static readonly string[] BlockNames = { "Morning", "Afternoon", "Evening" };
 
         public static DateTime ToDate(int day) => Origin.AddDays(day);
@@ -31,6 +33,9 @@ namespace IndieStudio.Simulation
         public static int MonthIndex(int day) => (Year(day) - 1) * 12 + Month(day) - 1;
 
         public static int FirstDayOfMonthIndex(int monthIndex) => (int)(Origin.AddMonths(monthIndex) - Origin).TotalDays;
+
+        /// <summary>Days from <paramref name="day"/> to the 1st of the next month (when the bills are paid).</summary>
+        public static int DaysUntilNextMonth(int day) => FirstDayOfMonthIndex(MonthIndex(day) + 1) - day;
 
         public static int DaysInMonthIndex(int monthIndex)
         {

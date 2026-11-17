@@ -263,13 +263,15 @@ namespace IndieStudio.Game.UI
             _ticker?.Pause();
             _ticker = null;
             double score = Mathf.Clamp01(_game.Score);
+            var founder = _studio.Sim.State.Founder;
+            var skillsBefore = SkillInfo.All.ToDictionary(k => k, founder.Get);
             var report = _apply(score);
             LastReport = report;
-            ShowResult(score, report);
+            ShowResult(score, report, report != null && report.HasSkill ? skillsBefore[report.Skill] : -1);
             _studio.Game.NotifyChanged();
         }
 
-        void ShowResult(double score, SlotReport report)
+        void ShowResult(double score, SlotReport report, double skillBefore)
         {
             _body.Clear();
             var project = _studio.Sim.State.ActiveProject;
@@ -293,10 +295,12 @@ namespace IndieStudio.Game.UI
             verdict.Add(Ui.Display(Verdict(stars), "mg-result__title"));
             verdict.Add(Ui.Text($"{_game.Name}: {Mathf.RoundToInt((float)score * 100)}%", "mg-result__score"));
             double multiplier = Rules.MinigameMultiplier(score);
-            var chip = Ui.Chip($"Work ×{multiplier:0.00}", multiplier >= 1 ? "chip--good mg-result__chip" : "chip--warn mg-result__chip");
+            int bonus = Mathf.RoundToInt((float)(multiplier - 1) * 100);
+            var chip = Ui.Chip(bonus > 0 ? $"+{bonus}% done" : bonus < 0 ? $"{bonus}% done" : "A normal session",
+                multiplier >= 1 ? "chip--good mg-result__chip" : "chip--warn mg-result__chip");
             verdict.Add(chip);
             verdict.Add(Ui.Text(multiplier >= 1.1 ? "Careful work: more progress and better quality."
-                : multiplier >= 1.05 && _game.Relaxed ? "Careful work. (Relaxed sessions top out at ×1.10.)"
+                : multiplier >= 1.05 && _game.Relaxed ? "Careful work. (Relaxed sessions top out a little lower.)"
                 : multiplier >= 0.95 ? "An ordinary session."
                 : "A rough session: less got done.", "mg-result__note"));
             if (building)
@@ -314,6 +318,7 @@ namespace IndieStudio.Game.UI
             var effect = Ui.El("mg-result__effect");
             if (report != null) effect.Add(SlotReportView.Build(report, true));
             else effect.Add(Ui.Text("Nothing happened.", "muted"));
+            if (skillBefore >= 0) effect.Add(SkillProgress(report.Skill, skillBefore, _studio.Sim.State.Founder.Get(report.Skill)));
             result.Add(effect);
 
             var buttons = Ui.Row("mg-result__buttons");
@@ -359,6 +364,52 @@ namespace IndieStudio.Game.UI
                 Celebrate.Confetti(_layer, origin, complete ? 64 : 30, seed);
             }).StartingIn(60);
             return banner;
+        }
+
+        /// <summary>What the session did for its skill: the level, a bar that fills up, and a cheer when a new level is reached.</summary>
+        VisualElement SkillProgress(Skill skill, double before, double after)
+        {
+            int levelBefore = (int)Math.Floor(before), level = (int)Math.Floor(after);
+            bool levelUp = level > levelBefore;
+            var box = Ui.El("mg-skill" + (levelUp ? " mg-skill--up" : ""));
+            box.name = levelUp ? "mg-level-up" : "mg-skill";
+            var head = Ui.Row("mg-skill__head");
+            head.Add(Ui.Display(level.ToString(), "level " + Fmt.SkillClass(skill)));
+            var words = Ui.El("grow");
+            words.Add(Ui.Display(levelUp ? $"Level up! {skill} {level}" : $"{skill} · level {level}", "mg-skill__title"));
+            // Practice is counted in XP (an hour of practice is 1 XP), so a session's gain reads as something earned.
+            double gained = levelUp
+                ? (levelBefore + 1 - before) * SkillInfo.HoursForLevel(levelBefore) + (after - level) * SkillInfo.HoursForLevel(level)
+                : (after - before) * SkillInfo.HoursForLevel(level);
+            double into = (after - level) * SkillInfo.HoursForLevel(level);
+            words.Add(Ui.Text(levelUp
+                ? (skill == Skill.Marketing ? "Your posts reach more people now." : $"Your {skill.ToString().ToLowerInvariant()} work is faster and better now, and gigs pay more.")
+                : level >= 10 ? "Mastered."
+                : $"+{Math.Max(1, Math.Round(gained)):0} XP · {into:0} / {SkillInfo.HoursForLevel(level):0} XP to level {level + 1}", "mg-skill__text"));
+            head.Add(words);
+            box.Add(head);
+
+            double start = levelUp ? 0 : before - levelBefore;
+            double end = level >= 10 ? 1 : after - level;
+            var bar = Ui.El("bar mg-skill__bar");
+            var old = Ui.El("bar__fill mg-skill__before");
+            Ui.SetFill(old, start);
+            var gain = Ui.El("bar__fill " + Fmt.SkillClass(skill));
+            gain.style.position = Position.Absolute;
+            gain.style.left = Length.Percent((float)(start * 100));
+            Ui.SetFill(gain, Math.Max(0.015, end - start));
+            bar.Add(old);
+            bar.Add(gain);
+            box.Add(bar);
+
+            if (levelUp)
+                _layer.schedule.Execute(() =>
+                {
+                    if (box.panel == null) return;
+                    var origin = _layer.WorldToLocal(box.worldBound.center);
+                    Celebrate.Confetti(_layer, origin, 36, level * 31 + (int)skill);
+                }).StartingIn(120);
+            return box;
         }
 
         public static int Stars(double score) => score >= Tuning.ThreeStarScore - 1e-6 ? 3 : score >= 0.6 ? 2 : score >= 0.3 ? 1 : 0;

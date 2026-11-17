@@ -172,6 +172,7 @@ namespace IndieStudio.Simulation
             if (project.UnitsSold >= 1 && State.Flags.Add("first_sale"))
             {
                 State.Founder.Morale = Rules.Clamp(State.Founder.Morale + 5, 0, 100);
+                Remember(StoryKind.Money, $"Your first sale! Someone out there paid for {project.Title}.");
                 Post("first_sale", MessageKind.Info, "Your first sale!",
                     $"Someone, somewhere, paid ${project.Price:0.00} for {project.Title}. Morale +5.");
             }

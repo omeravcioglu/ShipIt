@@ -1,3 +1,4 @@
+using System.Linq;
 using IndieStudio.Simulation;
 using UnityEngine.UIElements;
 
@@ -16,12 +17,23 @@ namespace IndieStudio.Game.UI
         {
             Root.Clear();
             var s = State;
-            Header("Upgrades", "Your bedroom, your laptop, your tools. Upgrades solve specific problems: buy them when the problem is real.");
+            Header("Shop", "Upgrades fix real problems, so buy them when the problem shows up. Decor makes the room yours and keeps your spirits up.");
             BarNote = Fmt.Money(s.Finance.Cash) + " to spend";
 
+            Root.Add(Ui.Display("Upgrades", "section-title"));
+            Root.Add(Cards(ShopCatalog.Items.Where(i => !i.Decor)));
+            Root.Add(Ui.Display("Make it cozy", "section-title"));
+            Root.Add(Cards(ShopCatalog.Items.Where(i => i.Decor)));
+
+            Root.Add(Ui.Display("Life", "section-title"));
+            Root.Add(LifeCard());
+        }
+
+        VisualElement Cards(System.Collections.Generic.IEnumerable<ShopItem> items)
+        {
+            var s = State;
             var row = Ui.Row("row--top wrap");
-            Root.Add(row);
-            foreach (var item in ShopCatalog.Items)
+            foreach (var item in items)
             {
                 bool owned = s.Owned.Contains(item.Id);
                 var card = Ui.Card(null, "shop-card" + (owned ? " card--owned" : ""));
@@ -35,13 +47,17 @@ namespace IndieStudio.Game.UI
                 head.Add(words);
                 card.Add(head);
                 card.Add(Ui.Text(item.Description, "shop-card__text"));
-                card.Add(Ui.Pill(Icons.Check, "Solves: " + item.Solves, "pill--soft pill--wrap"));
+                card.Add(item.Decor
+                    ? Ui.Pill(Icons.Heart, $"Cozy: morale settles {item.Comfort:0} higher", "pill--soft pill--wrap")
+                    : Ui.Pill(Icons.Check, "Solves: " + item.Solves, "pill--soft pill--wrap"));
                 card.Add(Ui.Grow());
                 var id = item.Id;
                 if (!owned)
                 {
                     var buy = Command("Buy", () => Sim.Buy(id, out _), "btn btn--primary");
+                    buy.name = "buy-" + id;
                     buy.SetEnabled(item.Price <= 0 || s.Finance.Cash - item.Price >= -s.Finance.CreditLimit);
+                    if (item.Decor) Why(buy, () => $"It goes up in your room right away (morale +{Tuning.DecorMorale:0}), and from then on your morale settles a little higher every week.");
                     card.Add(buy);
                 }
                 else if (item.Price <= 0 && item.Monthly > 0)
@@ -55,8 +71,12 @@ namespace IndieStudio.Game.UI
                 else card.Add(Ui.Pill(Icons.Check, "Owned. It's in your room.", "pill--good"));
                 row.Add(card);
             }
+            return row;
+        }
 
-            Root.Add(Ui.Display("Life", "section-title"));
+        VisualElement LifeCard()
+        {
+            var s = State;
             var life = Ui.Card(null, "life-card");
             var f = s.Founder;
             var lifeHead = Ui.Row("card-head");
@@ -74,7 +94,7 @@ namespace IndieStudio.Game.UI
                 life.Add(quit);
             }
             else life.Add(Ui.Text("No day job. Offers come when money is tight.", "small muted"));
-            Root.Add(life);
+            return life;
         }
 
         static string ItemIcon(string id)
@@ -86,6 +106,10 @@ namespace IndieStudio.Game.UI
                 case "ergonomic_chair": return Icons.Chair;
                 case "gaming_pc": return Icons.Monitor;
                 case "pro_art_tools": return Icons.Brush;
+                case "string_lights": return Icons.Star;
+                case "desk_lamp": return Icons.Bulb;
+                case "fluffy_rug": return Icons.Heart;
+                case "neon_sign": return Icons.Bolt;
                 default: return Icons.Bag;
             }
         }
@@ -99,6 +123,10 @@ namespace IndieStudio.Game.UI
                 case "ergonomic_chair": return "bg-teal icon-cream";
                 case "gaming_pc": return "bg-lavender";
                 case "pro_art_tools": return "bg-orange";
+                case "string_lights": return "bg-yellow";
+                case "desk_lamp": return "bg-mustard-light";
+                case "fluffy_rug": return "bg-teal icon-cream";
+                case "neon_sign": return "bg-pink";
                 default: return "bg-peach";
             }
         }

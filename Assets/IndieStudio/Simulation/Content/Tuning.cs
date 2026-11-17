@@ -96,6 +96,10 @@ namespace IndieStudio.Simulation
         /// <summary>Petting the cat lifts morale once a day, but only when you're low.</summary>
         public const double CatMorale = 2;
         public const double CatMoraleBelow = 60;
+        /// <summary>A new piece of decor lifts morale right away; after that it keeps morale settling a little higher.</summary>
+        public const double DecorMorale = 4;
+        /// <summary>Followers at which a fan note gets pinned to the corkboard in your room (and a moment goes in your story).</summary>
+        public static readonly int[] FanMilestones = { 10, 50, 100, 250, 500, 1000, 2500, 5000, 10000 };
 
         // Estimates: the planning fallacy (Design/05 §6)
         public const double EstimateBiasStart = 0.70;

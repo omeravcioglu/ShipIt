@@ -66,6 +66,8 @@ namespace IndieStudio.Simulation
         public readonly Dictionary<string, int> GoalsCompleted = new Dictionary<string, int>();
 
         public readonly LifetimeStats Stats = new LifetimeStats();
+        /// <summary>The studio's milestones, oldest first ("Your story so far").</summary>
+        public readonly List<StoryEntry> Story = new List<StoryEntry>();
         public WeekLog CurrentWeek = new WeekLog();
         public WeekLog LastWeek;
         public double ResearchPoints;

@@ -91,11 +91,14 @@ namespace IndieStudio.Simulation
             double old = f.Skills[skill];
             f.Skills[skill] = SkillInfo.AddPractice(old, hours);
             int after = f.Level(skill);
-            if (f.Skills[skill] - old >= 0.005) Note($"{skill} {old:0.00} → {f.Skills[skill]:0.00}");
             if (after > before)
+            {
+                State.CurrentWeek.LevelsGained++;
+                if (after >= 3) Remember(StoryKind.Level, $"{skill} reached level {after}.");
                 Post("level_up", MessageKind.Info, $"{skill} reached level {after}",
-                    $"Practice pays off. Your {skill.ToString().ToLowerInvariant()} work is now faster and better. " +
-                    $"Level {after + 1} needs {SkillInfo.HoursForLevel(after):0} more hours of practice.");
+                    skill == Skill.Marketing ? "Practice pays off: your posts reach more people now."
+                        : $"Practice pays off: your {skill.ToString().ToLowerInvariant()} work is faster and better now, and gigs in it pay more.");
+            }
         }
 
         void DoLearn(PlanBlock plan)
@@ -156,7 +159,7 @@ namespace IndieStudio.Simulation
             log.BurnoutChange = f.Burnout - burnoutBefore;
 
             double morale = f.Morale;
-            double restingPoint = f.Housing == Housing.Parents ? 50 : 60;
+            double restingPoint = (f.Housing == Housing.Parents ? 50 : 60) + ShopCatalog.Comfort(State);
             morale += (restingPoint - morale) * 0.08;
             if (log.ProjectPw >= 0.25) morale += 1.5;
             if (log.WorkBlocks > 0 && log.WeekendRestBlocks == 0) morale -= 1.5;
@@ -222,10 +225,12 @@ namespace IndieStudio.Simulation
             State.Finance.Reports.Add(report);
 
             double runwayMonths = State.Finance.RunwayDays() / 30.0;
-            Post("monthly_report", MessageKind.Info, $"Monthly report — {GameCalendar.MonthLabel(monthIndex)}",
-                $"Income {Rules.Money(report.Income)} · Expenses {Rules.Money(-report.Expenses)} · Net {Rules.Money(report.Net)}\n" +
-                $"Cash {Rules.Money(State.Finance.Cash)} · Owed to you {Rules.Money(State.Finance.PendingIncome)} · " +
-                $"Runway {runwayMonths:0.0} months at {Rules.Money(State.Finance.MonthlyRecurringTotal)}/month.");
+            double pending = State.Finance.PendingIncome;
+            Post("monthly_report", MessageKind.Info, $"Your {GameCalendar.FullMonthNames[monthIndex % 12]} in money",
+                $"You earned {Rules.Money(report.Income)} and spent {Rules.Money(-report.Expenses)}: " +
+                (report.Net >= 0 ? $"{Rules.Money(report.Net)} better off." : $"{Rules.Money(-report.Net)} down.") + "\n" +
+                $"You have {Rules.Money(State.Finance.Cash)}" + (pending >= 1 ? $", and {Rules.Money(pending)} more is on its way from clients and stores" : "") +
+                (runwayMonths > 99 ? "." : $". With your bills, that lasts about {runwayMonths:0.0} months."));
         }
 
         void PayDayJobUntil(int day)
@@ -268,13 +273,13 @@ namespace IndieStudio.Simulation
             double taxable = income - deductible - Tuning.TaxAllowance;
             if (taxable <= 0)
             {
-                Post("taxes", MessageKind.Info, "Taxes filed", $"Income last year: {Rules.Money(income)}. Below the tax-free allowance after expenses — nothing to pay.");
+                Post("taxes", MessageKind.Info, "Taxes filed", $"You earned {Rules.Money(income)} last year. After your studio costs, that's under the tax-free allowance: nothing to pay.");
                 return;
             }
             double tax = taxable * Tuning.TaxRate;
             State.Finance.Apply(day, -tax, TxCategory.Taxes, "Income tax (last year)");
             Post("taxes", MessageKind.Info, "Taxes paid",
-                $"Income {Rules.Money(income)} − deductible costs {Rules.Money(deductible)} − allowance {Rules.Money(Tuning.TaxAllowance)} → {Rules.Money(tax)} tax at {Rules.Pct(Tuning.TaxRate)}.");
+                $"Your tax bill for last year: {Rules.Money(tax)}. You earned {Rules.Money(income)}; your studio costs and a tax-free allowance were taken off first.");
         }
 
         void CheckBankruptcy()

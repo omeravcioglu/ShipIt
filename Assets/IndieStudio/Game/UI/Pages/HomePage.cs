@@ -56,6 +56,14 @@ namespace IndieStudio.Game.UI
         readonly Label _cardOutput;
         readonly VisualElement _mentor;
         readonly Label _tip;
+        readonly VisualElement _signRoot;
+        readonly VisualElement _rug;
+        readonly VisualElement _lights;
+        readonly VisualElement _gallery;
+        readonly VisualElement _cork;
+        readonly VisualElement _corkNotes;
+        readonly VisualElement _lamp;
+        int _galleryCount = -1;
 
         public HomePage(StudioUI studio) : base(studio)
         {
@@ -86,8 +94,15 @@ namespace IndieStudio.Game.UI
             Add(sky, "dio-lit dio-lit--3");
             Add(frame, "dio-window__bar");
 
+            // String lights along the top of the wall (decor), and the gallery of your released games.
+            _lights = Add(stage, "dio-lights hidden");
+            Garland(_lights, 716f, 978f, 172f, 14f, 10);
+            Garland(_lights, 1184f, 1552f, 360f, 26f, 13);
+            _gallery = Add(stage, "dio-gallery");
+
             // The studio's sign hangs above the window.
             var sign = Add(stage, "dio-sign");
+            _signRoot = sign;
             var plank = Hotspot(sign, "dio-sign__plank", Studio.ShowNameStudio, () => $"{State.StudioName}. Click to rename your studio.");
             plank.name = "room-sign";
             Add(plank, "dio-sign__string dio-sign__string--left");
@@ -96,13 +111,9 @@ namespace IndieStudio.Game.UI
             _sign.pickingMode = PickingMode.Ignore;
             plank.Add(_sign);
 
-            var poster = Hotspot(stage, "dio-poster", () =>
-                {
-                    if (State.ActiveProject != null || State.IsDemo) Studio.Show<ProjectPage>();
-                    else Studio.Show<IdeasPage>();
-                },
+            var poster = Hotspot(stage, "dio-poster", () => Studio.Show<ProjectPage>(),
                 () => State.ActiveProject != null ? $"The poster for {State.ActiveProject.Title}. Click to open the project."
-                    : State.IsDemo ? "Room for your first game's poster. Click to start it." : "Room for your next game's poster. Click to browse your ideas.");
+                    : State.ShippedGames == 0 ? "Room for your first game's poster. Click to start it." : "Room for your next game's poster. Click to pick an idea.");
             _posterArt = Add(poster, "dio-poster__art");
             Add(_posterArt, "dio-poster__sun");
             Add(_posterArt, "dio-poster__sea");
@@ -115,7 +126,13 @@ namespace IndieStudio.Game.UI
             poster.Add(_posterStamp);
             Add(stage, "dio-pin");
 
-            var calendar = Hotspot(stage, "dio-calendar", () => Studio.Show<DashboardPage>(), () => "Today's date. Click for how your week is going.");
+            // Fan notes: a corkboard that fills up as your followers pass each milestone.
+            _cork = Hotspot(stage, "dio-cork hidden", () => Studio.Show<ProjectPage>(), CorkHelp);
+            _cork.name = "room-cork";
+            _corkNotes = Add(_cork, "dio-cork__notes");
+
+            var calendar = Hotspot(stage, "dio-calendar", () => Studio.Show<FinancePage>(),
+                () => $"Today's date. Rent and bills leave your account on the 1st ({Fmt.Days(GameCalendar.DaysUntilNextMonth(State.Day))} from now). Click for your money.");
             var calendarTop = Add(calendar, "dio-calendar__top");
             _calendarMonth = Ui.Display("", "dio-calendar__month");
             calendarTop.Add(_calendarMonth);
@@ -142,6 +159,7 @@ namespace IndieStudio.Game.UI
             // --- floor: rug, bed, desk
             var rug = Add(stage, "dio-rug");
             Add(rug, "dio-rug__ring");
+            _rug = rug;
 
             var bed = Hotspot(stage, "dio-bed", () =>
                 {
@@ -198,6 +216,11 @@ namespace IndieStudio.Game.UI
             Add(_monitor, "dio-monitor__stand");
 
             _tablet = Add(stage, "dio-tablet");
+            _lamp = Add(stage, "dio-lamp hidden");
+            Add(_lamp, "dio-lamp__glow");
+            Add(_lamp, "dio-lamp__arm");
+            Add(_lamp, "dio-lamp__shade");
+            Add(_lamp, "dio-lamp__base");
             var mug = Hotspot(stage, "dio-mug", BrewCoffee, MugHelp);
             mug.name = "room-mug";
             _mugCoffee = Add(mug, "dio-mug__coffee");
@@ -211,9 +234,15 @@ namespace IndieStudio.Game.UI
 
             for (int i = 0; i < _pizza.Length; i++) _pizza[i] = Add(stage, $"dio-pizza dio-pizza--{i + 1}");
 
-            _plant = Add(stage, "dio-plant");
+            // The plant grows a little with every week you keep the studio going (and droops when you're low).
+            _plant = Ui.El("dio-plant");
+            stage.Add(_plant);
+            Why(_plant, PlantHelp);
+            Add(_plant, "dio-plant__leaf dio-plant__leaf--mid");
             Add(_plant, "dio-plant__leaf dio-plant__leaf--left");
             Add(_plant, "dio-plant__leaf dio-plant__leaf--right");
+            var flower = Add(_plant, "dio-plant__flower");
+            Add(flower, "dio-plant__heart");
             Add(_plant, "dio-plant__pot");
 
             _cat = new Cat { name = "room-cat", pickingMode = PickingMode.Position };
@@ -408,7 +437,29 @@ namespace IndieStudio.Game.UI
 
             int boxes = f.Burnout >= 70 ? 3 : f.Burnout >= 55 ? 2 : f.Burnout >= 40 ? 1 : 0;
             for (int i = 0; i < _pizza.Length; i++) _pizza[i].EnableInClassList("hidden", i >= boxes);
+
+            // The room grows with you: the plant, your released games on the wall, fan notes, and the decor you bought.
             _plant.EnableInClassList("dio-plant--wilted", f.Morale < 40);
+            _plant.EnableInClassList("dio-plant--sprout", s.Day < PlantSmallDay);
+            _plant.EnableInClassList("dio-plant--grown", s.Day >= PlantGrownDay);
+            _plant.EnableInClassList("dio-plant--bloom", s.Day >= PlantBloomDay && f.Morale >= 40);
+            _lights.EnableInClassList("hidden", !s.Owned.Contains("string_lights"));
+            _lamp.EnableInClassList("hidden", !s.Owned.Contains("desk_lamp"));
+            _rug.EnableInClassList("dio-rug--fluffy", s.Owned.Contains("fluffy_rug"));
+            bool neon = s.Owned.Contains("neon_sign");
+            _signRoot.EnableInClassList("dio-sign--neon", neon);
+            _signRoot.EnableInClassList("dio-sign--painted", !neon && s.ShippedGames > 0);
+            RefreshGallery();
+            int notes = Sim.FanMilestonesReached;
+            _cork.EnableInClassList("hidden", notes == 0);
+            while (_corkNotes.childCount < notes)
+            {
+                var note = Add(_corkNotes, $"dio-note dio-note--{"abcd"[_corkNotes.childCount % 4]}");
+                Add(note, "dio-note__pin");
+                Add(note, "dio-note__line");
+                Add(note, "dio-note__line dio-note__line--short");
+            }
+            while (_corkNotes.childCount > notes) _corkNotes.RemoveAt(_corkNotes.childCount - 1);
 
             string quip = Quip(out bool thought);
             _bubbleText.text = quip;
@@ -470,13 +521,69 @@ namespace IndieStudio.Game.UI
             var late = s.Freelance.Active.FirstOrDefault(g => g.DeadlineDay - s.Day <= 2);
             if (late != null) return $"\"{late.Title}\" is {Fmt.Due(s.Day, late.DeadlineDay)}. Clients remember.";
             if (s.Freelance.Offers.Any() && s.Freelance.ActiveCount < 2) return "There are gig offers waiting in GigGrid. Rent doesn't pay itself.";
-            switch (Fmt.WeekOfYear(s.Day) % 4)
+            switch (Fmt.WeekOfYear(s.Day) % 6)
             {
                 case 0: return "Nobody tells you this, but your first estimate is always wrong.";
                 case 1: return "Weekends off keep morale up. Evenings are fair game.";
                 case 2: return "Take your time with each session. Careful work counts for more.";
+                case 3: return "A string of lights, a good lamp: make this room yours. Happy developers get more done. (The Shop has decor.)";
+                case 4: return "Look how far you've come. Your story so far is on the You page.";
                 default: return "Hover over any number to see why it is what it is.";
             }
+        }
+
+        const int PlantSmallDay = 10, PlantGrownDay = 35, PlantBloomDay = 80;
+
+        /// <summary>A string of bulbs sagging between two points.</summary>
+        static void Garland(VisualElement parent, float x0, float x1, float y, float sag, int count)
+        {
+            string[] colors = { "dio-bulb--a", "dio-bulb--b", "dio-bulb--c", "dio-bulb--d" };
+            for (int i = 0; i < count; i++)
+            {
+                float t = i / (float)(count - 1);
+                var bulb = Add(parent, "dio-bulb " + colors[i % colors.Length]);
+                bulb.style.left = x0 + t * (x1 - x0);
+                bulb.style.top = y + sag * Mathf.Sin(t * Mathf.PI);
+            }
+        }
+
+        /// <summary>Your released games, framed on the wall (the five most recent).</summary>
+        void RefreshGallery()
+        {
+            var released = State.ReleasedProjects.OrderBy(p => p.ReleaseDay).ToList();
+            if (released.Count == _galleryCount) return;
+            _galleryCount = released.Count;
+            _gallery.Clear();
+            foreach (var game in released.Skip(System.Math.Max(0, released.Count - 5)))
+            {
+                var g = game;
+                var frame = Hotspot(_gallery, "dio-frame genre-" + g.Genre.ToString().ToLowerInvariant(), () => Studio.Show<ProjectPage>(),
+                    () => $"{g.Title}, launched {GameCalendar.FormatShort(g.ReleaseDay)}: {Fmt.Num(g.UnitsSold)} copies and {Fmt.Money(g.NetRevenue)} so far. Click to see your releases.");
+                frame.name = "room-frame";
+                Add(frame, "dio-frame__sun");
+                Add(frame, "dio-frame__hill");
+                var title = Ui.Display(g.Title.ToUpperInvariant(), "dio-frame__title");
+                title.pickingMode = PickingMode.Ignore;
+                frame.Add(title);
+            }
+        }
+
+        string CorkHelp()
+        {
+            double followers = State.Audience.Followers;
+            int next = Tuning.FanMilestones.FirstOrDefault(m => m > followers);
+            return $"Fan mail: {Fmt.Num(followers)} followers so far." +
+                   (next > 0 ? $" At {Fmt.Num(next)} followers, another note goes up." : " The board is full. You have real fans now.");
+        }
+
+        string PlantHelp()
+        {
+            var s = State;
+            if (s.Founder.Morale < 40) return "Your plant is drooping, and so are you. Rest, pet the cat, do something nice.";
+            if (s.Day < PlantSmallDay) return "A little sprout you planted on day one. It grows as the weeks go by.";
+            if (s.Day < PlantGrownDay) return $"Your plant, {s.Day} days old. It's growing along with your studio.";
+            if (s.Day < PlantBloomDay) return "Your plant has grown up since day one. Keep your spirits up and it might flower.";
+            return $"It's flowering! {s.Day} days since you planted it on day one.";
         }
 
         string ShelfHelp()

@@ -11,6 +11,7 @@ namespace IndieStudio.Simulation
     {
         void PostWelcome()
         {
+            Remember(StoryKind.Start, "Quit your job to make games, with $5,000 in savings, a tired laptop and a cat.");
             if (State.IsDemo)
             {
                 Post("welcome", MessageKind.Info, "Day one",
@@ -25,7 +26,7 @@ namespace IndieStudio.Simulation
                 "January's rent is paid. On the 1st of every month $1,460 leaves your account for rent, food and bills — " +
                 "that's about 3.4 months of runway if nothing comes in.\n" +
                 "Every day has a morning, an afternoon and an evening, and nothing happens until you decide how to spend them: " +
-                "gigs earn money, Build makes your game, Marketing finds players, rest keeps burnout down. " +
+                "gigs earn money, Build makes your game, rest keeps burnout down. " +
                 "Your friend Sam has a small gig for you in GigGrid.");
         }
 
@@ -76,7 +77,7 @@ namespace IndieStudio.Simulation
             {
                 var skill = rng.Pick(new[] { Skill.Programming, Skill.Art, Skill.Design, Skill.Marketing, Skill.Audio, Skill.Writing });
                 var m = Post("course_offer", MessageKind.Opportunity, $"Course sale: {skill} masterclass for $60",
-                    $"40 hours of structured lessons. Studying {skill} earns XP ×{Tuning.CourseXpMultiplier} instead of ×{Tuning.LearnXpMultiplier} until you finish it.",
+                    $"Ten sessions of proper lessons. Until you finish it, every Learn session on {skill} teaches you {Tuning.CourseXpMultiplier / Tuning.LearnXpMultiplier - 1:0%} more.",
                     (int)skill, 7, "Buy it ($60)", "Skip");
                 m.DefaultOption = 1;
             }
@@ -150,11 +151,12 @@ namespace IndieStudio.Simulation
                     w.Done -= cut;
                 }
                 if (project.Status == ProjectStatus.ReadyToRelease && !project.AllWorkDone) project.Status = ProjectStatus.InDevelopment;
-                loss = $"No backups: {lost:0.0} person-weeks of work on {project.Title} are gone. (A $10/month backup would have saved them.)";
+                loss = $"No backups: about {lost * Tuning.PersonWeekHours / Tuning.BlockHours:0} sessions of work on {project.Title} are gone. (A $10/month backup would have saved them.)";
             }
             else
                 loss = "Luckily there was nothing important on it.";
 
+            Remember(StoryKind.Setback, "Your old laptop died" + (State.Owned.Contains("backups") ? ", but the backups saved your work." : "."));
             var m = Post("laptop_dies", MessageKind.Critical, "Your laptop died",
                 $"It won't turn on. {loss}", 0, 7,
                 "Buy a refurbished laptop ($700)", "Buy a gaming PC ($1,800)", "Borrow a friend's old laptop (−15% output for 8 weeks)");
@@ -167,6 +169,7 @@ namespace IndieStudio.Simulation
         {
             State.Founder.ForcedRestUntilDay = day + Tuning.CollapseDays;
             State.Stats.Collapses++;
+            Remember(StoryKind.Setback, "Collapsed from burnout. Two weeks of rest, doctor's orders.");
             Post("collapse", MessageKind.Critical, "You collapsed",
                 $"Months of long weeks caught up with you (burnout {State.Founder.Burnout:0}). The doctor orders two weeks of rest. " +
                 "Gigs and deadlines don't pause while you recover.");
@@ -282,12 +285,13 @@ namespace IndieStudio.Simulation
                     fin.Apply(day, -60, TxCategory.Education, $"{(Skill)m.ContextId} masterclass");
                     f.CourseSkill = (Skill)m.ContextId;
                     f.CourseHoursLeft = 40;
-                    return $"Bought. Spend slots on Learn → {(Skill)m.ContextId} to work through it.";
+                    return $"Bought. Pick Learn → {(Skill)m.ContextId} in your day to work through it.";
 
                 case "job_offer":
                     if (option != 0) return "You stay focused on your own work.";
                     f.Job = DayJob.PartTime;
                     f.JobStartDay = day;
+                    Remember(StoryKind.Job, "Took a part-time café job to pay the bills.");
                     return "Weekday afternoons now belong to the café. Salary arrives on the 1st.";
 
                 case "old_colleague":
@@ -299,6 +303,7 @@ namespace IndieStudio.Simulation
                     if (f.Job != DayJob.None) PayDayJobUntil(day);
                     f.Job = DayJob.FullTime;
                     f.JobStartDay = day;
+                    Remember(StoryKind.Job, "Went back to your old team full time.");
                     f.Morale = Rules.Clamp(f.Morale - 5, 0, 100);
                     return "The safe choice. Your game gets evenings and weekends. Morale −5.";
 

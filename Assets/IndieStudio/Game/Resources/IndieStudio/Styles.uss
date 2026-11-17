@@ -1542,6 +1542,80 @@ Label {
 .dio-plant--wilted > .dio-plant__leaf--left { rotate: -38deg; top: 20px; }
 .dio-plant--wilted > .dio-plant__leaf--right { rotate: 38deg; top: 24px; }
 
+/* The room grows with you: the plant's stages, your released games on the wall, fan notes, and decor. */
+.dio-plant__leaf--mid { left: 26px; top: -30px; width: 30px; height: 76px; border-radius: 30px 30px 4px 4px; background-color: #6E9E52; display: none; }
+.dio-plant__flower { position: absolute; left: 22px; top: -62px; width: 40px; height: 40px; border-radius: 20px; border-width: 3px; border-color: var(--ink); background-color: var(--pink); align-items: center; justify-content: center; display: none; }
+.dio-plant__heart { width: 14px; height: 14px; border-radius: 7px; border-width: 2px; border-color: var(--ink); background-color: var(--mustard); }
+.dio-plant--sprout > .dio-plant__leaf--left { left: 22px; top: 32px; width: 20px; height: 32px; }
+.dio-plant--sprout > .dio-plant__leaf--right { left: 40px; top: 38px; width: 20px; height: 28px; }
+.dio-plant--grown > .dio-plant__leaf--mid { display: flex; }
+.dio-plant--grown > .dio-plant__leaf--left { left: -2px; top: -8px; width: 42px; height: 74px; }
+.dio-plant--grown > .dio-plant__leaf--right { left: 44px; top: -2px; width: 42px; height: 70px; }
+.dio-plant--bloom > .dio-plant__flower { display: flex; }
+
+.dio-gallery { position: absolute; left: 1036px; top: 106px; flex-direction: row; }
+.dio-frame {
+    width: 66px;
+    height: 80px;
+    margin-right: 14px;
+    padding: 0 3px 5px 3px;
+    border-radius: 5px;
+    border-width: 3px 4px 5px 3px;
+    border-color: var(--ink);
+    overflow: hidden;
+    align-items: center;
+    justify-content: flex-end;
+    rotate: -2deg;
+}
+.dio-frame__sun { position: absolute; left: 18px; top: 10px; width: 26px; height: 26px; border-radius: 13px; border-width: 3px; border-color: var(--ink); background-color: var(--mustard); }
+.dio-frame__hill { position: absolute; left: -12px; right: -12px; top: 36px; height: 60px; border-radius: 40px 40px 0 0; border-top-width: 3px; border-color: var(--ink); background-color: rgba(58, 35, 23, 0.22); }
+.dio-frame__title { font-size: 10px; color: var(--cream); -unity-text-align: middle-center; white-space: normal; }
+
+.dio-cork { position: absolute; left: 428px; top: 440px; width: 170px; height: 98px; padding: 9px 6px; border-radius: 6px; border-width: 4px; border-color: var(--ink); background-color: #C9955E; }
+.dio-cork__notes { flex-direction: row; flex-wrap: wrap; }
+.dio-note { width: 24px; height: 24px; margin: 3px; padding: 7px 3px 0 3px; border-width: 2px; border-color: var(--ink); background-color: var(--paper); }
+.dio-note--a { rotate: -6deg; }
+.dio-note--b { rotate: 5deg; background-color: #FFE29A; }
+.dio-note--c { rotate: -2deg; background-color: #F7C6D9; }
+.dio-note--d { rotate: 7deg; background-color: #CDE7F0; }
+.dio-note__pin { position: absolute; left: 7px; top: -6px; width: 8px; height: 8px; border-radius: 4px; border-width: 1px; border-color: var(--ink); background-color: var(--red); }
+.dio-note__line { height: 2px; margin-bottom: 3px; background-color: rgba(58, 35, 23, 0.45); }
+.dio-note__line--short { width: 60%; }
+
+.dio-lights { position: absolute; left: 0; top: 0; width: 1600px; height: 450px; }
+.dio-bulb { position: absolute; width: 14px; height: 18px; border-radius: 7px 7px 8px 8px; border-width: 2px; border-color: var(--ink); }
+.dio-bulb--a { background-color: #FFD36B; }
+.dio-bulb--b { background-color: #FF8FA3; }
+.dio-bulb--c { background-color: #8FD3C7; }
+.dio-bulb--d { background-color: #B9A2F0; }
+
+.dio-lamp { position: absolute; left: 984px; top: 446px; width: 80px; height: 98px; }
+.dio-lamp__glow { position: absolute; left: -46px; top: -6px; width: 132px; height: 132px; border-radius: 66px; background-color: rgba(255, 214, 120, 0); }
+.home--evening .dio-lamp__glow, .home--night .dio-lamp__glow { background-color: rgba(255, 214, 120, 0.3); }
+.dio-lamp__arm { position: absolute; left: 30px; top: 24px; width: 9px; height: 66px; border-width: 3px; border-color: var(--ink); background-color: var(--teal); rotate: -14deg; }
+.dio-lamp__shade { position: absolute; left: 0; top: 8px; width: 54px; height: 30px; border-radius: 26px 26px 6px 6px; border-width: 3px; border-color: var(--ink); background-color: var(--mustard); rotate: -18deg; }
+.dio-lamp__base { position: absolute; left: 12px; bottom: 0; width: 46px; height: 12px; border-radius: 6px; border-width: 3px; border-color: var(--ink); background-color: var(--teal); }
+
+.week-card { margin-bottom: 10px; padding: 10px 12px; border-radius: 16px; border-width: 3px 3px 5px 3px; border-color: var(--ink); background-color: var(--paper); }
+.week-card__head { flex-direction: row; align-items: center; margin-bottom: 6px; }
+.week-card__tile { width: 30px; height: 30px; margin-right: 8px; }
+.week-card__title { font-size: 18px; }
+.week-card__stats { flex-direction: row; flex-wrap: wrap; }
+.week-card__stat { min-width: 30%; flex-grow: 1; margin: 2px 4px 2px 0; padding: 4px 6px; border-radius: 10px; background-color: var(--cream); }
+.week-card__value { font-size: 18px; }
+.week-card__label { font-size: 11px; color: var(--muted); }
+.week-card__quiet { font-size: 13px; color: var(--muted); }
+
+.story__stats { margin-bottom: 8px; }
+.story__row { flex-direction: row; align-items: center; padding: 6px 0; border-bottom-width: 2px; border-color: rgba(58, 35, 23, 0.08); }
+.story__date { width: 84px; flex-shrink: 0; font-size: 12px; color: var(--muted); }
+.story__tile { width: 26px; height: 26px; margin-right: 10px; flex-shrink: 0; }
+.story__text { flex-grow: 1; flex-shrink: 1; font-size: 14px; white-space: normal; }
+.lessons__found { margin-top: 12px; }
+
+.dio-rug--fluffy { background-color: #8FC9C2; }
+.dio-rug--fluffy > .dio-rug__ring { border-width: 6px; border-color: var(--paper); }
+
 .cat { position: absolute; left: 560px; top: 718px; width: 120px; height: 80px; }
 .dio-cat-zz { position: absolute; left: 672px; top: 700px; font-size: 20px; rotate: -10deg; }
 
@@ -2165,6 +2239,9 @@ Label {
     rotate: -2deg;
 }
 .dio-sign__text { font-size: 22px; color: var(--cream); white-space: nowrap; }
+.dio-sign--painted .dio-sign__plank { background-color: var(--teal); }
+.dio-sign--neon .dio-sign__plank { background-color: #2B1830; border-color: #1A0F1D; }
+.dio-sign--neon .dio-sign__text { color: #FF9AD5; text-shadow: 0px 0px 8px rgb(255, 79, 176); }
 .dio-sign__string { position: absolute; top: -34px; width: 3px; height: 34px; background-color: var(--ink); }
 .dio-sign__string--left { left: 14px; }
 .dio-sign__string--right { right: 14px; }

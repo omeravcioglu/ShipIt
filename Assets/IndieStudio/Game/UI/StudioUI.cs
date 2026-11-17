@@ -106,11 +106,9 @@ namespace IndieStudio.Game.UI
             _minigames = new MinigameHost(this, minigameLayer);
 
             AddPage(new HomePage(this));
-            AddPage(new DashboardPage(this));
-            AddPage(new InboxPage(this));
             AddPage(new ProjectPage(this));
             AddPage(new GigsPage(this));
-            AddPage(new IdeasPage(this));
+            AddPage(new InboxPage(this));
             AddPage(new FinancePage(this));
             AddPage(new SkillsPage(this));
             AddPage(new ShopPage(this));
@@ -247,14 +245,7 @@ namespace IndieStudio.Game.UI
             if (Sim.State.IsGameOver || _minigames.IsOpen || HasBlockingModal) return;
             Sim.Sleep();
             LaunchMorningToast();
-            if (GameCalendar.IsMonday(Sim.Day) && Sim.State.LastWeek != null)
-            {
-                var week = Sim.State.LastWeek;
-                Toast(Icons.Calendar, "act-rest", "Last week",
-                    $"{week.HoursWorked}h of work. Burnout {Signed(week.BurnoutChange)}, morale {Signed(week.MoraleChange)}." +
-                    (week.FreelanceEarned > 0 ? $" Gigs delivered: {Fmt.Money(week.FreelanceEarned)}." : ""));
-            }
-            _game.NotifyChanged();
+            _game.NotifyChanged(); // on Mondays, your day opens with a look back at last week
         }
 
         /// <summary>Each morning of launch week: yesterday's numbers, and any critic who published today.</summary>
@@ -270,8 +261,6 @@ namespace IndieStudio.Game.UI
             Toast(Icons.Rocket, "bg-orange", $"Launch day {day + 1} of {Tuning.LaunchWeekDays}: {game.Title}",
                 $"Yesterday: {yesterday.Units:0} copies, {Fmt.Money(yesterday.Net)}. Players' mood: {Fmt.Pct(r.Mood)} positive. {critics}".Trim());
         }
-
-        static string Signed(double value) => (value >= 0 ? "+" : "") + value.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture);
 
         /// <summary>Releases a game and puts on the launch-day show.</summary>
         public void Launch(Project project, double price)
@@ -524,6 +513,8 @@ namespace IndieStudio.Game.UI
         public void OnMessagePosted(Message message)
         {
             if (message.Kind == MessageKind.Info || message.Kind == MessageKind.Opportunity) Toast(message);
+            // News you saw pop up isn't left waiting as unread mail. Offers, decisions and bad news are.
+            if (message.Kind == MessageKind.Info && !message.NeedsDecision) Sim.MarkRead(message.Id);
         }
 
         void Toast(Message message)

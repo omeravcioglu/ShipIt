@@ -46,12 +46,12 @@ namespace IndieStudio.Game.UI
         void BuildNewProject()
         {
             var s = State;
-            Header("Start a project", "Pick an idea, a scope and an art style. Every choice changes cost, audience and risk. Your estimates will be optimistic. Everyone's are at first.");
+            Header("Start a project", "Pick an idea, how big to make it, and an art style you can pull off.");
             BarNote = s.ShippedGames == 0 ? "Your first game" : $"Game #{s.ShippedGames + 1}";
             var ideas = s.UnusedIdeas.ToList();
             if (ideas.Count == 0)
             {
-                Root.Add(Ui.Empty("Your idea notebook is empty. Spend a session or two on Research, or join a game jam."));
+                Root.Add(Ui.Empty("You're out of ideas. Spend a session or two on \"Get inspired\" in your day, or join a game jam."));
                 return;
             }
             if (ideas.All(i => i.Id != _ideaId)) _ideaId = ideas[0].Id;
@@ -60,7 +60,7 @@ namespace IndieStudio.Game.UI
             var ideaRow = Ui.Row("row--top wrap");
             foreach (var idea in ideas)
             {
-                var card = IdeasPage.IdeaCardView(idea, idea.Id == _ideaId);
+                var card = IdeaCardView(idea, idea.Id == _ideaId);
                 var id = idea.Id;
                 card.Add(Ui.Btn(idea.Id == _ideaId ? "Selected" : "Choose", () => { _ideaId = id; Refresh(); }, "btn btn--small" + (idea.Id == _ideaId ? " btn--selected" : "")));
                 ideaRow.Add(card);
@@ -68,7 +68,7 @@ namespace IndieStudio.Game.UI
             Root.Add(ideaRow);
 
             var choices = Ui.Row("grid-row");
-            var scopeCard = Ui.Card("2. Scope", "col-4");
+            var scopeCard = Ui.Card("2. Size", "col-4");
             var scopeRow = Ui.Row("wrap");
             scopeRow.Add(ChoiceButton("Tiny", _scope == ProjectScope.Tiny, () => _scope = ProjectScope.Tiny,
                 "A handful of features: two or three weeks alongside gigs. Cheap to fail, great to learn from."));
@@ -92,10 +92,11 @@ namespace IndieStudio.Game.UI
             foreach (var style in GameContent.ArtStyles)
             {
                 var st = style;
-                string warning = art < st.SkillFloor ? $"\nYour Art skill ({art:0.0}) is below this style's floor ({st.SkillFloor:0}): it will look cheap unless you improve or buy assets." : "";
-                string hardware = st.Is3D && !s.Owned.Contains("gaming_pc") ? "\n3D on your laptop: -20% output from slow builds." : "";
+                string warning = art < st.SkillFloor ? $"\nYour Art is level {s.Founder.Level(Skill.Art)}: this style looks cheap until Art level {st.SkillFloor:0} (or with bought assets)." : "";
+                string hardware = st.Is3D && !s.Owned.Contains("gaming_pc") ? "\n3D on your laptop is slow: every session gets less done." : "";
+                string work = st.ArtCost > 1.05 ? $"\nNeeds about {st.ArtCost:0.#}× the art work." : st.ArtCost < 0.95 ? "\nNeeds less art work than most." : "";
                 var button = ChoiceButton(st.Name + (art < st.SkillFloor ? " (!)" : ""), _style == st.Id, () => _style = st.Id,
-                    $"{st.Note}\nArt cost ×{st.ArtCost:0.0} · looks good from Art {st.SkillFloor:0}{warning}{hardware}");
+                    $"{st.Note}{work}\nLooks good from Art level {st.SkillFloor:0}.{warning}{hardware}");
                 if (art < st.SkillFloor) button.AddToClassList("choice-chip--risky");
                 styleRow.Add(button);
             }
@@ -107,7 +108,6 @@ namespace IndieStudio.Game.UI
             var genre = GameContent.Genre(idea0.Genre);
             var artStyle = GameContent.ArtStyle(_style);
             var plan = Sim.PlanProject(idea0, _scope, _style);
-            double estimate = plan.TotalRequired * Rules.EstimateBias(s);
             double sessions = Sim.EstimatedSessions(plan);
 
             var summary = Ui.Card("Your estimate", "estimate");
@@ -119,7 +119,7 @@ namespace IndieStudio.Game.UI
             head.Add(words);
             summary.Add(head);
             summary.Add(Ui.Text($"\"{idea0.Hook}.\"", "quote"));
-            var est = Ui.KeyValue("Work", $"about {sessions:0} Build sessions ({estimate:0.0} person-weeks)");
+            var est = Ui.KeyValue("Work", $"about {sessions:0} Build sessions");
             Why(est, () => "A session is one morning, afternoon or evening of work (4 hours), played as a minigame. Your skills decide how much each one gets done.\n" +
                            "This is your honest guess, but first-time developers usually underestimate.");
             summary.Add(est);
@@ -135,6 +135,55 @@ namespace IndieStudio.Game.UI
             summary.Add(start);
             Root.Add(summary);
         }
+
+        /// <summary>An idea as an index card: genre band, title, hook, traits, how promising it looks and who it's for.</summary>
+        static VisualElement IdeaCardView(IdeaCard idea, bool selected)
+        {
+            var genre = GameContent.Genre(idea.Genre);
+            var card = Ui.Card(null, "idea-card" + (selected ? " card--selected" : ""));
+            var band = Ui.Row("idea-card__band genre-" + idea.Genre.ToString().ToLowerInvariant());
+            band.Add(Ui.Text(genre.Name.ToUpperInvariant(), "idea-card__genre"));
+            band.Add(Ui.Grow());
+            if (idea.JamProven) band.Add(Ui.Chip("JAM-PROVEN", "chip--ink"));
+            card.Add(band);
+            card.Add(Ui.Display(idea.Title, "idea-card__title"));
+            card.Add(Ui.Text(idea.Theme, "muted small"));
+            card.Add(Ui.Text($"\"{idea.Hook}.\"", "quote"));
+            if (idea.Traits.Count > 0)
+            {
+                var chips = Ui.Row("wrap");
+                foreach (var trait in idea.Traits) chips.Add(Ui.Chip(trait));
+                card.Add(chips);
+            }
+            var potential = Ui.Row("idea-card__fun");
+            potential.Add(Ui.Text("How fun it could be", "kv__key"));
+            potential.Add(Ui.Grow());
+            int stars = PotentialStars(idea);
+            var row = Ui.Row("stars");
+            for (int i = 0; i < 5; i++)
+            {
+                var star = new Icon(Icons.Star, 16f, 2.2f) { Filled = i < stars };
+                star.AddToClassList("star");
+                star.EnableInClassList("star--on", i < stars);
+                row.Add(star);
+            }
+            potential.Add(row);
+            card.Add(potential);
+            string[] confidence = { "A total mystery so far.", "Just a hunch: it could turn out better or worse.", "You've looked into it: a fair guess.", "Proven: you know it works." };
+            card.Add(Ui.Text(confidence[System.Math.Min(3, idea.Knowledge)], "small muted"));
+            card.Add(Ui.KeyValue("Audience", MarketLabel(genre.Market)));
+            return card;
+        }
+
+        /// <summary>The idea's fun potential as you see it, 0–5 stars (0 when you know nothing about it yet).</summary>
+        static int PotentialStars(IdeaCard idea)
+        {
+            if (idea.Knowledge <= 0) return 0;
+            GameSimulation.FunEstimate(idea, out double low, out double high);
+            return System.Math.Max(1, System.Math.Min(5, (int)System.Math.Round((low + high) / 2 * 5)));
+        }
+
+        static string MarketLabel(double market) => market >= 4 ? "lots of players" : market >= 3 ? "a good crowd" : "a small, loyal crowd";
 
         Button ChoiceButton(string text, bool selected, System.Action choose, string help)
         {
@@ -191,7 +240,7 @@ namespace IndieStudio.Game.UI
                 label.Add(Ui.Tile(Fmt.SkillIcon(w.Discipline), "features__tile " + Fmt.SkillClass(w.Discipline), 14f));
                 label.Add(Ui.Text(w.Discipline.ToString(), "features__skill-name"));
                 var ws = w;
-                Why(label, () => $"{ws.Discipline}: your skill {s.Founder.Get(ws.Discipline):0.0}, average task quality so far {ws.Quality:0.0}/10.");
+                Why(label, () => $"{ws.Discipline}: you're level {s.Founder.Level(ws.Discipline)}. The work so far is {QualityWord(ws.Quality)} ({ws.Quality:0}/10).");
                 lane.Add(label);
                 var chips = Ui.Row("features__chips");
                 for (int i = 0; i < w.FeatureCount; i++)
@@ -234,7 +283,7 @@ namespace IndieStudio.Game.UI
                 if (!project.BoughtAssetPack && project.Stream(Skill.Art)?.Remaining > 0)
                 {
                     var pack = Command($"Buy an art asset pack ({Fmt.Money(Sim.AssetPackPrice(project))})", () => Sim.BuyAssetPack(project.Id, out _), "btn btn--small");
-                    Why(pack, () => "Covers 40% of the remaining art at quality 6, maybe better than your own work.\nBut players have seen these assets before: Innovation -0.6.");
+                    Why(pack, () => "Covers 40% of the remaining art with decent ready-made art, maybe better than your own.\nBut players have seen these assets before, so the game feels a little less original.");
                     progress.Add(pack);
                 }
             }
@@ -266,10 +315,10 @@ namespace IndieStudio.Game.UI
             band.style.width = Length.Percent((float)(System.Math.Max(0.02, high - low) * 100));
             range.Add(band);
             quality.Add(range);
-            quality.Add(Ui.Text("Your guess at the quality players will see. Design and Production skills narrow the range.", "small muted"));
+            quality.Add(Ui.Text("Your guess at what players will think. The better your Design skill, the closer the guess.", "small muted"));
             double bugs = project.BugsRemaining;
             quality.Add(Ui.KeyValue("Bugs (estimate)", bugs < 1 ? "very few" : $"{bugs * 0.7:0}-{bugs * 1.3:0}", bugs > 15 ? "warn" : null));
-            quality.Add(Ui.Text("The exact breakdown is revealed in the post-mortem, 30 days after launch.", "small muted"));
+            quality.Add(Ui.Text("You'll find out for sure a month after launch.", "small muted"));
             side.Add(quality);
             top.Add(side);
 
@@ -406,6 +455,9 @@ namespace IndieStudio.Game.UI
             return launch;
         }
 
+        static string QualityWord(double quality) =>
+            quality >= 8 ? "excellent" : quality >= 6.5 ? "good" : quality >= 5 ? "decent" : quality > 0 ? "rough" : "not started";
+
         static string PreviewHelp(Project project)
         {
             if (project.Status == ProjectStatus.ReadyToRelease)
@@ -451,13 +503,16 @@ namespace IndieStudio.Game.UI
                     card.Add(Ui.KeyValue("After launch", $"{r.Hotfixes} hotfix{(r.Hotfixes == 1 ? "" : "es")} · {r.Answers} answer session{(r.Answers == 1 ? "" : "s")}"));
                 if (p.PostMortemDay >= 0)
                 {
-                    var pillars = Ui.Row("wrap");
-                    foreach (var x in r.Pillars) pillars.Add(Ui.Chip($"{x.Key} {x.Value:0.0}"));
-                    pillars.Add(Ui.Chip($"Stability {r.Stability:0.0}"));
-                    card.Add(pillars);
+                    var best = r.Pillars.OrderByDescending(x => x.Value).First().Key;
+                    var worst = r.Pillars.OrderBy(x => x.Value).First().Key;
+                    var verdict = Ui.Row("wrap");
+                    verdict.Add(Ui.Chip("Loved: " + GameContent.PillarWord(best), "chip--good"));
+                    verdict.Add(Ui.Chip("Weakest: " + GameContent.PillarWord(worst)));
+                    if (r.Stability < 6) verdict.Add(Ui.Chip("Buggy", "chip--warn"));
+                    card.Add(verdict);
                 }
                 else
-                    card.Add(Ui.Text($"Post-mortem on {GameCalendar.FormatShort(p.ReleaseDay + 30)}.", "muted small"));
+                    card.Add(Ui.Text($"The verdict comes in on {GameCalendar.FormatShort(p.ReleaseDay + 30)}, a month after launch.", "muted small"));
                 var reviews = ReviewWriter.For(p, 2);
                 if (reviews.Count > 0)
                 {

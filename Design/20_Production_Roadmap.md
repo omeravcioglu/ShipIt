@@ -73,6 +73,23 @@ A design this large needs its own lessons applied to it: **prototype the core lo
   - **Builds:** the demo is a separate build (`SHIPIT_DEMO`, product name "Ship It! Demo", its own save) and a separate Steam app.
   - **Length:** `DemoTests` plays 40 seeds against a time model of the minigames. A typical player ships on day 5 in about 16 minutes. A careless one (weaker sessions, evenings off) still ships, on day 10, in about 20 minutes.
 
+- **A clarity and fun pass** (17 Nov 2026). The brief: understandable, fun, controls that make sense, relatable, nothing players won't care about, and changes you can see as time passes.
+  - **Cut:**
+    - The Dashboard app (it repeated the HUD and the Bank) and the Ideas app (ideas are picked where games start, in the Project app). Seven apps remain.
+    - The HUD's bell and scale buttons: one mail button, highlighted while something waits for an answer.
+    - The mail page's "pausing" rules, left over from the real-time clock.
+    - News you saw pop up no longer piles up as unread mail.
+    - Business, Leadership, Negotiation and Production from the screens (they did nothing yet, or only tuned hidden estimates).
+    - Formulas and jargon in what players read: idea cards show stars and a plain confidence word, not percentage ranges. Skills are levels with "~N sessions to the next". There are no person-weeks or ×multipliers. The post-mortem and monthly report are short, friendly summaries.
+  - **Progressive disclosure:** day one offers Build, Gig work and Rest. Marketing, Get inspired (Research renamed) and Learn join after the first day, once a game is underway, with a note saying so.
+  - **Seeing progress:**
+    - A level bar after every session, in XP, with a level-up moment.
+    - Monday's "week in review": money in, features, gigs, followers, levels.
+    - "Your story so far" on the You page (`GameSimulation.Story.cs`).
+    - The room grows: the plant sprouts, grows and flowers over the months. Released games hang framed on the wall, fan notes go up at follower milestones, and the sign is painted after the first launch.
+    - Decor in the Shop (string lights, desk lamp, fluffy rug, neon sign) shows up in the room. It lifts morale at once, and raises the point morale settles at (+3 or +4 each).
+  - Save format v7. The balance numbers are unchanged: the bots don't buy decor, and everything else is presentation or bookkeeping.
+
 **Next (M2 remainder):** Chirp/Clipz/ViewTube as separate channels, and the live hour-by-hour launch dashboard. Both rework existing systems (marketing's single follower pool, the launch week), so they're worth a playtest of the current slice first.
 
 ## 1. Scope reality check

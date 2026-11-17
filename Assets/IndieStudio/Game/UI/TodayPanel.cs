@@ -13,7 +13,7 @@ namespace IndieStudio.Game.UI
     public sealed class TodayPanel
     {
         static readonly string[] TimeClasses = { "time-morning", "time-afternoon", "time-evening", "time-night" };
-        static readonly Skill[] LearnSkills = { Skill.Programming, Skill.Design, Skill.Art, Skill.Audio, Skill.Writing, Skill.Marketing, Skill.Business };
+        static readonly Skill[] LearnSkills = SkillsPage.Shown;
 
         readonly StudioUI _studio;
         string _open;
@@ -104,16 +104,17 @@ namespace IndieStudio.Game.UI
         {
             var s = State;
             var project = s.ActiveProject;
+            if (slot == 0 && GameCalendar.IsMonday(s.Day) && s.LastWeek != null) body.Add(WeekCard(s));
             body.Add(Ui.Text($"What will you do this {Fmt.SlotName(slot).ToLowerInvariant()}?", "today__question"));
             if (Sim.IsAfterWork(PlanBlock.Develop))
             {
-                var tired = Ui.Pill(Icons.Coffee, $"After your shift: work counts ×{Tuning.AfterJobFatigue:0.0} tonight", "pill--warn today__tired");
+                var tired = Ui.Pill(Icons.Coffee, $"After your shift: you get {1 - Tuning.AfterJobFatigue:0%} less done tonight", "pill--warn today__tired");
                 _studio.Tooltip.Attach(tired, () => "A day job takes energy as well as hours. Sessions after a shift get less done, which is why keeping the job makes your game so slow.");
                 body.Add(tired);
             }
             if (s.CoffeeReady)
             {
-                var coffee = Ui.Pill(Icons.Coffee, $"Coffee's ready: your next work session ×{Tuning.CoffeeBoost:0.00}", "pill--soft today__tired");
+                var coffee = Ui.Pill(Icons.Coffee, $"Coffee's ready: your next session gets {Tuning.CoffeeBoost - 1:0%} more done", "pill--soft today__tired");
                 coffee.name = "today-coffee";
                 _studio.Tooltip.Attach(coffee, () => "You brewed it in your room. Building, gigs and studying use it up; resting doesn't. It goes cold overnight.");
                 body.Add(coffee);
@@ -142,12 +143,16 @@ namespace IndieStudio.Game.UI
             Group(body, "gig", "act-gig", Icons.Briefcase, "act-freelance", "Gig work", gigSub, GigOptions,
                 active.Select(g => Sim.FlowBonusFor(PlanBlock.Gig(g.Id))).DefaultIfEmpty(0).Max());
 
-            if (!s.IsDemo)
+            if (!s.IsDemo && MoreActivitiesOpen(s))
             {
-                Group(body, "market", "act-market", Icons.Megaphone, "act-marketing", "Marketing", $"{Fmt.Num(s.Audience.Followers)} followers", MarketOptions);
-                body.Add(Row("act-research", Icons.Search, "act-research", "Research", "New ideas, and a sharper read on yours", null, false, false,
+                if (Sim.MarkSeen("more_activities"))
+                    _studio.Notify(Icons.Star, "bg-mustard-light", "New things to do",
+                        "Your day now has Marketing (find players for your game), Get inspired (ideas for your next game) and Learn (level up a skill).");
+                Group(body, "market", "act-market", Icons.Megaphone, "act-marketing", "Marketing",
+                    s.Audience.Followers < 1 ? "Find players for your game" : $"{Fmt.Num(s.Audience.Followers)} followers", MarketOptions);
+                body.Add(Row("act-research", Icons.Search, "act-research", "Get inspired", "Play games and read reviews: ideas for your next game", null, false, false,
                     () => _studio.Play(PlanBlock.Research)));
-                Group(body, "learn", "act-learn", Icons.Graduation, "act-learn", "Learn", "Study a skill: slower now, faster later", LearnOptions,
+                Group(body, "learn", "act-learn", Icons.Graduation, "act-learn", "Learn", "Watch tutorials to level up a skill", LearnOptions,
                     LearnSkills.Select(k => Sim.FlowBonusFor(PlanBlock.Study(k))).Max());
             }
             body.Add(Row("act-rest", Icons.Moon, "act-rest", "Rest", $"Burnout {s.Founder.Burnout:0}. Rest brings it down.", null, false, false,
@@ -160,6 +165,47 @@ namespace IndieStudio.Game.UI
                 body.Add(more);
             }
         }
+
+        /// <summary>Monday morning's look back at last week: what came in, what got built, who found you, what you got better at.</summary>
+        VisualElement WeekCard(GameState s)
+        {
+            var week = s.LastWeek;
+            var card = Ui.El("week-card");
+            card.name = "today-last-week";
+            var head = Ui.Row("week-card__head");
+            head.Add(Ui.Tile(Icons.Calendar, "week-card__tile bg-mustard-light", 16f));
+            head.Add(Ui.Display($"Week {Fmt.WeekOfYear(s.Day - 7)} in review", "week-card__title"));
+            card.Add(head);
+
+            double cameIn = s.Finance.Transactions.Where(t => t.Day >= s.Day - 7 && t.Day < s.Day && t.Amount > 0).Sum(t => t.Amount);
+            var launched = s.ReleasedProjects.Where(p => p.ReleaseDay >= s.Day - 7 && p.ReleaseDay < s.Day).Select(p => p.Title).ToList();
+            var stats = Ui.Row("week-card__stats");
+            void Stat(bool show, string value, string label)
+            {
+                if (!show) return;
+                var box = Ui.El("week-card__stat");
+                box.Add(Ui.Display(value, "week-card__value"));
+                box.Add(Ui.Text(label, "week-card__label"));
+                stats.Add(box);
+            }
+            Stat(cameIn >= 1, Fmt.Money(cameIn), "came in");
+            Stat(week.FeaturesBuilt > 0, week.FeaturesBuilt.ToString(), week.FeaturesBuilt == 1 ? "feature built" : "features built");
+            Stat(week.GigsDelivered > 0, week.GigsDelivered.ToString(), week.GigsDelivered == 1 ? "gig delivered" : "gigs delivered");
+            Stat(week.FollowersGained >= 1, "+" + Fmt.Num(week.FollowersGained), "followers");
+            Stat(week.LevelsGained > 0, "+" + week.LevelsGained, week.LevelsGained == 1 ? "skill level" : "skill levels");
+            if (stats.childCount > 0) card.Add(stats);
+            if (launched.Count > 0) card.Add(Ui.Pill(Icons.Rocket, "You launched " + string.Join(" and ", launched) + "!", "pill--good pill--wrap"));
+            if (stats.childCount == 0 && launched.Count == 0) card.Add(Ui.Text("A quiet week. This one's a fresh start.", "week-card__quiet"));
+            _studio.Tooltip.Attach(card, () => $"Last week you worked {week.HoursWorked} hours." +
+                (week.BurnoutChange > 0.5 ? " That was a lot: burnout went up." : week.BurnoutChange < -0.5 ? " A healthy pace: burnout came down." : ""));
+            return card;
+        }
+
+        /// <summary>
+        /// Marketing, Get inspired and Learn join your day once your first game is underway and the first day is behind
+        /// you, so a new player starts with just three choices: build, gigs and rest.
+        /// </summary>
+        public static bool MoreActivitiesOpen(GameState s) => s.Projects.Count > 0 && (s.TutorialDone || s.Day >= 1);
 
         /// <summary>Launch week's choices for a released game: hotfix, answer players, post (Design/10 §7).</summary>
         void LaunchGroup(VisualElement body, Project game, bool launchWeek)
@@ -181,7 +227,8 @@ namespace IndieStudio.Game.UI
                 $"About {game.BugsRemaining:0} bugs left · a rushed fix can break something ({Fmt.Pct(Sim.RegressionChance)})", "Bug Squash",
                 () => _studio.Play(hotfix), -1, Sim.FlowBonusFor(hotfix)));
             list.Add(Option("launch-answer", Icons.Chat, "act-community", "Answer players",
-                r.Goodwill >= Tuning.GoodwillMax - 1e-6 ? "They've heard from you; it still wins followers" : $"Goodwill so far: +{r.Goodwill * 100:0} review points", "Feedback Sort",
+                r.Goodwill >= Tuning.GoodwillMax - 1e-6 ? "They've heard from you; it still wins followers"
+                    : r.Goodwill > 0 ? "Players notice you listen: reviews are warming up" : "Players who hear from you write kinder reviews", "Feedback Sort",
                 () => _studio.Play(answer), -1, Sim.FlowBonusFor(answer)));
             if (launchWeek)
                 list.Add(Option("launch-post", Icons.Megaphone, "act-marketing", "Post about the launch", "Twice the reach, and some readers buy right away", null,
@@ -218,7 +265,9 @@ namespace IndieStudio.Game.UI
             _studio.Tooltip.Attach(card, () =>
                 "Launch week: the numbers come in every morning for seven days. Reviews are written every day in the players' current mood, " +
                 "so hotfixes count most in the first days, when most players arrive. Answering players wins goodwill, and posts sell copies. " +
-                $"Word of mouth carries the mood into every month after (now ×{r.SalesMultiplier:0.00}).");
+                (r.SalesMultiplier >= 1.02 ? "Players are talking: word of mouth will keep selling copies in the months after."
+                    : r.SalesMultiplier <= 0.98 ? "The mood is souring: word of mouth will slow later sales unless you turn it around."
+                    : "Word of mouth carries the players' mood into every month after."));
             return card;
         }
 
@@ -311,7 +360,7 @@ namespace IndieStudio.Game.UI
             var project = s.ActiveProject;
             if (project == null)
             {
-                list.Add(Ui.Text("You need a project to build. Pick an idea, a scope and an art style.", "opt__empty"));
+                list.Add(Ui.Text("You need a game to build. Pick an idea, a size and an art style.", "opt__empty"));
                 var open = Ui.Btn("Open the Project app", () => _studio.Show<ProjectPage>(), "btn btn--small");
                 open.name = "today-open-project";
                 list.Add(open);
@@ -426,7 +475,8 @@ namespace IndieStudio.Game.UI
                 double value = f.Get(skill);
                 bool course = f.CourseHoursLeft > 0 && f.CourseSkill == skill;
                 list.Add(Option("learn-" + skill.ToString().ToLowerInvariant(), Fmt.SkillIcon(skill), Fmt.SkillClass(skill), skill.ToString(),
-                    $"Level {f.Level(skill)} ({value:0.0})" + (course ? $" · course: {f.CourseHoursLeft:0}h left" : ""), null,
+                    $"Level {f.Level(skill)} · {Fmt.Pct(value - Math.Floor(value))} to level {f.Level(skill) + 1}" +
+                    (course ? $" · course: ~{Math.Ceiling(f.CourseHoursLeft / Tuning.BlockHours):0} sessions left" : ""), null,
                     () => _studio.Play(PlanBlock.Study(k)), value - Math.Floor(value), Sim.FlowBonusFor(PlanBlock.Study(k))));
             }
         }
@@ -554,7 +604,8 @@ namespace IndieStudio.Game.UI
             var words = Ui.El("grow");
             words.Add(Ui.Text(report.Title, "today__log-title-text"));
             string detail = report.HasProgress ? $"{Fmt.Pct(report.ProgressBefore)} → {Fmt.Pct(report.ProgressAfter)}" : report.Lines.FirstOrDefault();
-            if (report.Performance > 1.001 || report.Performance < 0.999) detail = $"×{report.Performance:0.00} · " + detail;
+            string played = report.Performance >= 1.15 ? "brilliant" : report.Performance >= 1.05 ? "good session" : report.Performance <= 0.9 ? "rough session" : null;
+            if (played != null) detail = played + (string.IsNullOrEmpty(detail) ? "" : " · " + detail);
             if (!string.IsNullOrEmpty(detail)) words.Add(Ui.Text(detail, "today__log-detail"));
             row.Add(words);
             return row;

@@ -68,7 +68,7 @@ namespace IndieStudio.Game.Tests
             Assert.IsFalse(ui.Root.Q("coach").ClassListContains("hidden"));
 
             // --- a simpler game: closed apps, a shorter day panel, the demo's clock
-            foreach (var locked in new[] { "dock-dashboard", "dock-ideas", "dock-bank", "dock-you", "dock-shop" })
+            foreach (var locked in new[] { "dock-bank", "dock-you", "dock-shop" })
                 Assert.IsTrue(ui.Root.Q(locked).ClassListContains("dock-btn--locked"), locked + " is closed in the demo");
             foreach (var open in new[] { "dock-home", "dock-mail", "dock-project", "dock-gigs" })
                 Assert.IsFalse(ui.Root.Q(open).ClassListContains("dock-btn--locked"), open + " is open in the demo");

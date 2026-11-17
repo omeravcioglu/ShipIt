@@ -40,6 +40,20 @@ namespace IndieStudio.Simulation
     /// </summary>
     public static class GameContent
     {
+        /// <summary>What players call a pillar: "the gameplay", "the sound", "the originality".</summary>
+        public static string PillarWord(Pillar pillar)
+        {
+            switch (pillar)
+            {
+                case Pillar.Gameplay: return "the gameplay";
+                case Pillar.Graphics: return "the graphics";
+                case Pillar.Audio: return "the sound";
+                case Pillar.Story: return "the story";
+                case Pillar.Content: return "how much there is to do";
+                default: return "the originality";
+            }
+        }
+
         public static readonly IReadOnlyList<GenreDef> Genres = new[]
         {
             Genre(GenreId.Platformer, "Platformer", 3, 2, W(40, 20, 10, 0, 15, 15), S(35, 25, 28, 8, 4)),

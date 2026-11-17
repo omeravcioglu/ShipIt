@@ -18,8 +18,6 @@ namespace IndieStudio.Game.UI
         /// <summary>Apps the demo keeps closed, and what each one does in the full game.</summary>
         static readonly Dictionary<Type, string> FullGameApps = new Dictionary<Type, string>
         {
-            { typeof(DashboardPage), "Your week at a glance: the runway chart, your audience, and how your games are selling." },
-            { typeof(IdeasPage), "Research new game ideas, and get a sharper read on the ones you have." },
             { typeof(FinancePage), "Bills on the 1st, payouts, monthly reports and your cash forecast." },
             { typeof(SkillsPage), "Your skills and levels, and what to study next." },
             { typeof(ShopPage), "Upgrades for your bedroom studio: a gaming PC, a proper chair, pro art tools." },
@@ -120,7 +118,7 @@ namespace IndieStudio.Game.UI
                 HowToCard(Icons.Target, "bg-teal", "Your goal",
                     IsDemo
                         ? "The goal at the top right always shows what's next: click it for the steps. In this demo you have two weeks to ship your first game. Doug points the way."
-                        : "The goal at the top right always shows your current chapter: click it for the steps. Side goals run alongside, and every number has a \"Why?\" when you hover it."),
+                        : "The goal at the top right always shows your current chapter: click it for the steps. Your room grows along with the studio, the You page keeps your story so far, and every number has a \"Why?\" when you hover it."),
             };
             for (int i = 0; i < cards.Length; i += 3)
             {

@@ -148,7 +148,7 @@ namespace IndieStudio.Simulation
             }
 
             var report = ExecuteBlock(day, slot, block, multiplier);
-            if (flow > 1.0001) report.Lines.Add($"Flow: session {State.FlowStreak} in a row, ×{flow:0.00}.");
+            if (flow > 1.0001) report.Lines.Add($"In the zone: {State.FlowStreak} sessions in a row on this, +{flow - 1:0%} done.");
             if (coffee) report.Lines.Add($"Coffee: ×{Tuning.CoffeeBoost:0.00}.");
             if (afterWork) report.Lines.Add($"Tired after the day job: this session counted ×{Tuning.AfterJobFatigue:0.0}.");
             report.Forced = forced.HasValue;
@@ -245,6 +245,7 @@ namespace IndieStudio.Simulation
             PayDayJobUntil(State.Day);
             State.Founder.Job = DayJob.None;
             State.Founder.JobStartDay = -1;
+            Remember(StoryKind.Job, "Quit the day job to go back to making games full time.");
             Post("job_quit", MessageKind.Info, "You quit the day job", "Your time is your own again. So is the rent.");
         }
 
@@ -262,7 +263,16 @@ namespace IndieStudio.Simulation
             if (item.Monthly > 0) State.Finance.SetRecurring(item.Id, item.Name, item.Monthly, item.Category);
             State.Owned.Add(itemId);
             if (itemId == "gaming_pc" || itemId == "cooling_pad") State.Flags.Remove("laptop_risky");
+            if (item.Decor) State.Founder.Morale = Rules.Clamp(State.Founder.Morale + Tuning.DecorMorale, 0, 100);
+            if (item.Price >= 100 || item.Decor) Remember(StoryKind.Shop, $"Bought {WithArticle(item.Name.ToLowerInvariant())}" + (item.Decor ? " for the room." : "."));
             return true;
+        }
+
+        /// <summary>"a desk lamp", "an ergonomic chair", "string lights".</summary>
+        static string WithArticle(string name)
+        {
+            if (name.EndsWith("s") && !name.EndsWith("ss")) return name;
+            return ("aeiou".IndexOf(name[0]) >= 0 ? "an " : "a ") + name;
         }
 
         public void CancelSubscription(string itemId)
@@ -328,6 +338,7 @@ namespace IndieStudio.Simulation
             if (State.IsGameOver) return;
             CheckGoals(State.Day);
             CheckChapter();
+            CheckStoryMilestones();
             if (State.IsDemo && State.DemoEnd == DemoEnd.None && State.ShippedGames >= 1) State.DemoEnd = DemoEnd.Shipped;
         }
 
@@ -351,6 +362,7 @@ namespace IndieStudio.Simulation
                 var chapter = ChapterCatalog.All[State.Chapter];
                 if (!chapter.IsComplete(State)) return;
                 State.ChaptersCompleted[chapter.Id] = State.Day;
+                Remember(StoryKind.Chapter, $"Chapter {chapter.Number} complete: {chapter.Title}.");
                 State.Chapter++;
                 State.ChapterStartDay = State.Day;
                 State.Founder.Morale = Rules.Clamp(State.Founder.Morale + 8, 0, 100);

@@ -209,7 +209,7 @@ namespace IndieStudio.Game.Tests
             {
                 var report = ShowReport(finale, score, 0.6, 1.0);
                 report.Lines.Add($"Finished: {finale.Setup.Title} (Design)");
-                report.Lines.Add("Flow: session 3 in a row, ×1.10.");
+                report.Lines.Add("In the zone: 3 sessions in a row on this, +10% done.");
                 return report;
             });
             ui.Minigames.StartPlaying();
@@ -274,7 +274,7 @@ namespace IndieStudio.Game.Tests
             _game.NotifyChanged();
             yield return _rec.Idle(0.1f);
             int pageClip = 0;
-            foreach (var title in new[] { "Dashboard", "Bank" })
+            foreach (var title in new[] { "You", "Bank" })
             {
                 var page = ui.Pages.FirstOrDefault(p => p.Title == title);
                 if (page == null) continue;

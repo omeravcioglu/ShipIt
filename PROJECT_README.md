@@ -10,16 +10,22 @@ The full game design lives in [`Design/`](Design/README.md). This repository cur
 2. Open `Assets/Scenes/SampleScene.unity` and press **Play**. The game starts itself; no scene setup is needed.
 3. Old Dev Doug walks you through your first day (you can skip him), starting with your studio's name. **There is no clock:** time only moves when you decide what to do with the morning, afternoon and evening, using the **day panel** on the left, and then go to sleep.
 4. **Work is played.** Building a feature of your game is **Wire It Up**, a connection puzzle: turn tiles until the flow reaches every module. It dresses up as the work: a circuit for code, paint pipes for art, patch cables for audio, level paths for design, red string on a corkboard for writing. Tiny projects bolt a few tiles in place; bigger ones have wobbly tiles. Each kind of gig has its own minigame: **Bug Squash** (programming, also used for polishing your game), **Pixel Match** (art), **Typo Hunt** (writing), **Synth Tuner** (audio) and **Feedback Sort** (design). The better you play, the more the session gets done.
-5. The HUD shows the part of the day, your money and runway, how you feel, and your **goal**: the current chapter, starting with *Ship your first game*. Click it for the steps. The **menu** (☰, top right) shows who's signed in and your **achievements** (24 of them), and has **relaxed minigames** (no timers), the save status, "Replay the tutorial", "Rename your studio" and "Start a new studio…".
+5. The HUD shows the part of the day, your money and runway, how you feel, one **mail** button, and your **goal**: the current chapter, starting with *Ship your first game*. Click it for the steps. The **menu** (☰, top right) shows who's signed in and your **achievements** (24 of them), and has **How to play**, **relaxed minigames** (no timers), the save status, "Replay the tutorial", "Rename your studio" and "Start a new studio…". The dock has seven apps: Room, Project, GigGrid, Mail, Bank, You and Shop.
 6. **The game saves itself** a second after every change and on quit, to `Saves/studio.isav` in Unity's `persistentDataPath` (on Windows, under `AppData/LocalLow/McHunter Studio/Ship It!/`; a save from the old `DefaultCompany/IndieStudio` folder is copied over once). Next time you press Play you're welcomed back where you left off. A damaged save is set aside and the backup loaded. On Steam the save also goes to **Steam Cloud**, so your studio follows you to any computer.
-7. The room is a status display:
-   - The window shows the time of day, and your studio's sign hangs above it.
+7. The room is a status display, and it **grows with your studio**:
+   - The window shows the time of day, and your studio's sign hangs above it. The sign gets a coat of paint when you ship your first game.
    - You sleep in bed when you rest. Pizza boxes pile up with burnout, and trophies appear when you ship.
    - The laptop shows **your game as it grows**: gray boxes and a magenta placeholder hero become art, levels, music and dialogue, one feature at a time.
+   - The plant you start with on day one sprouts, grows and, months in, flowers (it droops when you're low). Your released games hang framed on the wall, and fan notes go up on a corkboard at 10, 50, 100, 250… followers.
+   - **Decor** from the Shop (string lights, a desk lamp, a fluffy rug, a neon studio sign) shows up in the room. Each piece lifts your morale and keeps it settling a little higher.
    - **Interactions:** click the bed to rest (or sleep at night), or click the laptop, calendar, phone, savings jar or yourself. Click the **mug** to brew a coffee, and pet the **cat** when you're feeling low.
+8. **You can see how far you've come.**
+   - After every session a level bar fills up for the skill you used, and a new level gets its own moment.
+   - Monday mornings open with **last week in review**: money in, features built, gigs delivered, new followers, levels gained.
+   - The You page keeps **your story so far**: your first gig, every game started and launched, follower milestones, levels, chapters, setbacks too.
 
 **What you can do in M1:**
-- Spend every morning, afternoon and evening yourself: Build, Gig work, Marketing (screenshots, a devlog or a meme), Research, Learn, Rest. Weeks over 45 hours build burnout.
+- Spend every morning, afternoon and evening yourself: Build, Gig work and Rest from day one. Once your first game is underway, **Marketing** (screenshots, a devlog or a meme), **Get inspired** (play games and read reviews for new ideas) and **Learn** join them. Weeks over 45 hours build burnout.
 - Take GigGrid freelance gigs to pay the rent. Pay grows with skill and rating; careful sessions earn better ratings; some clients never pay.
 - Start a Tiny or Small game from an idea card, choosing genre, scope and art style. A game is a list of named features ("Player controls", "Hero sprite", "Jump scares"…), and you wire them up one session at a time.
 - Work through four chapters (ship a game, find players, ship a Small game, live off your games) plus side goals.
@@ -27,7 +33,7 @@ The full game design lives in [`Design/`](Design/README.md). This repository cur
 - Open a scratch.io or Vapor store page and collect wishlists. Sign a Vapor game up for **Next Fest** (February, June, October; once per game): make a demo in Build sessions, and the fest week brings wishlists depending on how good the game and the demo are.
 - **Launch.** You get a launch-day show with ticking counters and players' first impressions of the features you built.
 - Then play **launch week**: each morning brings yesterday's sales, the reviews and the critics. You decide whether to hotfix (early fixes count most), answer players, post while the game is hot, or move on. Word of mouth carries the reviews into every month of sales after.
-- Read the day-30 post-mortem: it reveals what players actually saw, and you pick a lesson.
+- A month after launch, look back: copies, money, what players loved and what held the game back. Then pick a lesson to keep.
 - Survive: rent on the 1st, burnout, money stress, a dying laptop, day-job offers, game jams, rent increases, and bankruptcy past the credit limit.
 - Hover numbers with a "Why?" explanation: runway, burnout, rates, output.
 
@@ -50,7 +56,7 @@ A free demo of chapter 1 that takes **15 to 20 minutes**: your first two weeks i
 - **It opens with a welcome** (what the demo is, in three steps) and a **How to play** page: your day, building, gigs, staying fresh, shipping and the goal. How to play is in the menu for the full game too.
 - **Doug's tutorial runs as usual for the first day.** After it, his guide keeps pointing at the next step until the game is out: Sam's gig, every feature, a store page, the launch. Players can hide it.
 - **It's the simple game.** Tiny games only, at 70% of the full game's work (about 11 Build sessions). There are gigs, coffee, the cat, rest and launch day. scratch.io is the only store.
-  - The Dashboard, Ideas, Bank, You and Shop apps carry a lock and say what they do in the full game.
+  - The Bank, You and Shop apps carry a lock and say what they do in the full game.
   - Marketing, research and learning are left out of the day panel.
   - There's no Vapor, no Next Fest and no achievements.
 - **The clock:** the HUD's goal reads "DEMO · 9 DAYS LEFT". Doug warns three days before the end, and the last night's button says "Sleep (ends the demo)".
@@ -82,7 +88,7 @@ The rules are in `Simulation/Content/DemoRules.cs`. `DemoTests` checks them and 
 | `Assets/IndieStudio/Steam/` | The Steam module (Steamworks.NET): sign-in, achievements, Steam Cloud. It compiles only once the package is installed (`Steam/README.md`). |
 | `Assets/IndieStudio/Game/UI/Drawing/` | Things USS can't draw, done with Painter2D: the cartoon `Avatar`, line `Icon`s (from SVG path data), `GamePreview` (your game, drawn from its genre, art style and progress), the cash-forecast chart, the cat, generated textures |
 | `Assets/IndieStudio/Game/Resources/IndieStudio/` | `Styles.uss` (the warm "sticker" look: all colors and layout), `Theme.tss`, and `Fonts/` (Lilita One, SIL OFL) |
-| `Assets/IndieStudio/Game/Tests/` | Play-mode tests. The smoke test boots the real game, then: names the studio and follows the tutorial; plays every minigame and every look of Wire It Up (relaxed too); brews a coffee and pets the cat; sleeps; launches a first game with its launch-day show; and opens every screen. The save tests autosave, continue in a new session and recover from a damaged save (in a temp folder). The platform tests use a fake Steam: the studio follows you to a second computer, a conflict asks which studio to keep, and achievements unlock with a toast. The Next Fest test signs up from the Project page, makes a demo session and shows the fest week. The demo tests play the free demo from its welcome, past the closed apps and Doug's guide, to the launch and the end card. They also run out its two weeks, and check that its save stays apart from the full game's. |
+| `Assets/IndieStudio/Game/Tests/` | Play-mode tests. The smoke test boots the real game, then: names the studio and follows the tutorial; plays every minigame and every look of Wire It Up (relaxed too); brews a coffee and pets the cat; sleeps; launches a first game with its launch-day show; and opens every screen. The save tests autosave, continue in a new session and recover from a damaged save (in a temp folder). The platform tests use a fake Steam: the studio follows you to a second computer, a conflict asks which studio to keep, and achievements unlock with a toast. The Next Fest test signs up from the Project page, makes a demo session and shows the fest week. The demo tests play the free demo from its welcome, past the closed apps and Doug's guide, to the launch and the end card. They also run out its two weeks, and check that its save stays apart from the full game's. The progress tests check a first day with three choices that opens up later, the single mail button, the level bar after a session, Monday's look back, "Your story so far", and the room growing (the plant, your games on the wall, fan notes, decor). |
 | `Assets/IndieStudio/Editor/` | Editor menus: branding, **Play as the demo**, and the Windows builds of the game and the demo (`GameBuilds`) |
 | `SimHarness/` | .NET projects that build and test the simulation **outside Unity** in seconds, and type-check the Unity layer and the Steam module |
 | `Steam/` | The Steamworks setup: steps, the achievements sheet and their icons (`AchievementIcons/`) |
@@ -95,7 +101,7 @@ The rules are in `Simulation/Content/DemoRules.cs`. `DemoTests` checks them and 
 dotnet test SimHarness/Tests
 ```
 
-It runs the same test files Unity uses: 79 tests. They cover the day/slot rules, flow, coffee, tired evenings, Next Fest and demos, launch week, player and critic reviews, achievements, the cloud-save decision and the free demo (its rules and its 15–20 minutes). Save tests check that every field survives and that a loaded game plays on identically (older save versions still load). The balance tests print a two-year economy report per strategy.
+It runs the same test files Unity uses: 84 tests. They cover the day/slot rules, flow, coffee, tired evenings, Next Fest and demos, launch week, player and critic reviews, achievements, the cloud-save decision, the free demo (its rules and its 15–20 minutes), and your progress (the studio's story, the week's look back, decor). Save tests check that every field survives and that a loaded game plays on identically (older save versions still load). The balance tests print a two-year economy report per strategy.
 
 **Type-check the Unity layer against the engine DLLs, without opening the editor:**
 

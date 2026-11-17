@@ -22,6 +22,12 @@ namespace IndieStudio.Simulation
             State.StudioName = name;
         }
 
+        /// <summary>
+        /// Remembers that the player has been shown something once ("new things to do"). True the first time.
+        /// Kept in <see cref="GameState.Flags"/>, so it's saved with the game.
+        /// </summary>
+        public bool MarkSeen(string key) => State.Flags.Add("seen:" + key);
+
         static readonly string[] NameFirst = { "Lantern", "Pocket", "Moth", "Tiny", "Copper", "Honey", "Velvet", "Paper", "Salt", "Quiet", "Pixel", "Little" };
         static readonly string[] NameSecond = { "Bytes", "Games", "Harbor", "Garden", "Works", "Moon", "Fox", "Owl", "Lab", "Kite", "Engine", "Room" };
 

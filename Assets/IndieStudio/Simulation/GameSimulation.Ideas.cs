@@ -62,7 +62,7 @@ namespace IndieStudio.Simulation
             GainXp(Skill.Design, Tuning.BlockHours * 0.5);
             if (State.ResearchPoints < ResearchPointsPerIdea)
             {
-                Note($"Research notes: {State.ResearchPoints:0}/{ResearchPointsPerIdea:0} toward your next insight.");
+                Note($"Inspiration is building: {Rules.Pct(State.ResearchPoints / ResearchPointsPerIdea)} of the way to your next idea.");
                 return;
             }
             State.ResearchPoints -= ResearchPointsPerIdea;
@@ -72,10 +72,9 @@ namespace IndieStudio.Simulation
             {
                 unknown.Knowledge++;
                 if (unknown.Knowledge >= 2 && unknown.HookStrength >= 0.65 && !unknown.Traits.Contains("Strong hook")) unknown.Traits.Add("Strong hook");
-                FunEstimate(unknown, out double low, out double high);
-                Note($"A clearer read on {unknown.Title}: fun potential {Rules.Pct(low)}–{Rules.Pct(high)}.");
-                Post("research", MessageKind.Info, $"Research: a closer look at {unknown.Title}",
-                    $"Playing similar games and reading their reviews narrowed your read on it: fun potential {Rules.Pct(low)}–{Rules.Pct(high)}.");
+                Note($"You have a clearer idea of how fun {unknown.Title} could be.");
+                Post("research", MessageKind.Info, $"A closer look at {unknown.Title}",
+                    "Playing games like it showed you what works and what doesn't. Its stars in the Project app are a better guess now.");
                 return;
             }
 
@@ -83,7 +82,7 @@ namespace IndieStudio.Simulation
             AddIdea(idea);
             Note($"New idea: {idea.Title} ({GameContent.Genre(idea.Genre).Name}).");
             Post("research", MessageKind.Info, $"New idea: {idea.Title}",
-                $"{GameContent.Genre(idea.Genre).Name} · {idea.Theme}: \"{idea.Hook}.\" It's in your Idea Notebook.");
+                $"{GameContent.Genre(idea.Genre).Name} · {idea.Theme}: \"{idea.Hook}.\" It's waiting in the Project app for your next game.");
         }
 
         // ------------------------------------------------------------------ jams
@@ -135,8 +134,9 @@ namespace IndieStudio.Simulation
             }
             State.Audience.Followers += followers;
             f.Morale = Rules.Clamp(f.Morale + 6, 0, 100);
+            Remember(StoryKind.Jam, $"Made \"{idea.Title}\" in a weekend game jam: #{rank:#,0} of {entrants:#,0}.");
             Post("jam_result", MessageKind.Info, $"Jam result: #{rank:#,0} of {entrants:#,0}",
-                $"Your jam game \"{idea.Title}\" is done. +{followers:0} followers, morale +6. It's now a Jam-proven idea in your notebook (10% less work if you develop it).{extra}");
+                $"Your jam game \"{idea.Title}\" is done. +{followers:0} followers, morale +6. It's now a jam-proven idea in the Project app: you know it's fun, and it takes 10% less work.{extra}");
         }
     }
 }

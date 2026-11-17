@@ -17,8 +17,8 @@ namespace IndieStudio.Simulation
     {
         /// <summary>"ISAV" (Indie Studio save), little-endian.</summary>
         const uint Magic = 0x56415349;
-        /// <summary>1: the first save format. 2: studio name, flow, coffee and the cat. 3: counters for achievements. 4: launch week. 5: Next Fest and demos. 6: the edition (full game or free demo) and how the demo ended.</summary>
-        public const int Version = 6;
+        /// <summary>1: the first save format. 2: studio name, flow, coffee and the cat. 3: counters for achievements. 4: launch week. 5: Next Fest and demos. 6: the edition (full game or free demo) and how the demo ended. 7: the studio's story and the week's visible progress.</summary>
+        public const int Version = 7;
 
         public static void Write(GameState state, Stream stream) => Write(state, stream, Version);
 
@@ -142,6 +142,32 @@ namespace IndieStudio.Simulation
                 w.Write((int)s.Edition);
                 w.Write((int)s.DemoEnd);
             }
+            if (version >= 7)
+            {
+                WriteWeekProgress(w, s.CurrentWeek);
+                if (s.LastWeek != null) WriteWeekProgress(w, s.LastWeek);
+                w.Write(s.Story.Count);
+                foreach (var entry in s.Story)
+                {
+                    w.Write(entry.Day);
+                    w.Write((int)entry.Kind);
+                    WriteString(w, entry.Text);
+                }
+            }
+        }
+
+        static void WriteWeekProgress(BinaryWriter w, WeekLog log)
+        {
+            w.Write(log.FeaturesBuilt);
+            w.Write(log.LevelsGained);
+            w.Write(log.GigsDelivered);
+        }
+
+        static void ReadWeekProgress(BinaryReader r, WeekLog log)
+        {
+            log.FeaturesBuilt = r.ReadInt32();
+            log.LevelsGained = r.ReadInt32();
+            log.GigsDelivered = r.ReadInt32();
         }
 
         static GameState ReadState(BinaryReader r, int version)
@@ -230,6 +256,14 @@ namespace IndieStudio.Simulation
             {
                 s.Edition = (Edition)r.ReadInt32();
                 s.DemoEnd = (DemoEnd)r.ReadInt32();
+            }
+            if (version >= 7)
+            {
+                ReadWeekProgress(r, s.CurrentWeek);
+                if (s.LastWeek != null) ReadWeekProgress(r, s.LastWeek);
+                int stories = r.ReadInt32();
+                for (int i = 0; i < stories; i++)
+                    s.Story.Add(new StoryEntry { Day = r.ReadInt32(), Kind = (StoryKind)r.ReadInt32(), Text = ReadString(r) });
             }
             return s;
         }

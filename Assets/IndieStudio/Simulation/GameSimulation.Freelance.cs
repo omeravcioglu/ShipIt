@@ -103,6 +103,9 @@ namespace IndieStudio.Simulation
             gig.Status = GigStatus.Completed;
             profile.AddScore(score);
             profile.CompletedGigs++;
+            State.CurrentWeek.GigsDelivered++;
+            if (profile.CompletedGigs == 1) Remember(StoryKind.Gig, $"Delivered your first gig, \"{gig.Title}\", for {gig.ClientName}.");
+            else if (profile.CompletedGigs % 10 == 0) Remember(StoryKind.Gig, $"Delivered your {Ordinal(profile.CompletedGigs)} gig.");
 
             string stars = $"{score}/5";
             if (State.RngGigs.Chance(gig.NonPayRisk))

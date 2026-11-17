@@ -67,6 +67,10 @@ namespace IndieStudio.Simulation
         public int IdleDevelopBlocks;
         public double FollowersGained;
         public double WishlistsGained;
+        /// <summary>Progress you can see, for Monday's look back at the week.</summary>
+        public int FeaturesBuilt;
+        public int LevelsGained;
+        public int GigsDelivered;
         /// <summary>Set when the week closes on Sunday night: how burnout and morale moved.</summary>
         public double BurnoutChange;
         public double MoraleChange;

@@ -78,7 +78,7 @@ namespace IndieStudio.Game.UI
                 case "gig_late":
                     return App("GigGrid", Icons.Briefcase, "bg-lavender");
                 case "research":
-                    return App("Idea notebook", Icons.Bulb, "bg-yellow");
+                    return App("Inspiration", Icons.Bulb, "bg-yellow");
                 case "project_started":
                 case "store_page":
                 case "launch":

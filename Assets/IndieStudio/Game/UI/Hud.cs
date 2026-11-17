@@ -32,10 +32,6 @@ namespace IndieStudio.Game.UI
         readonly Label _morale;
         readonly VisualElement _burnoutFill;
         readonly Label _burnout;
-        readonly Button _critical;
-        readonly Label _criticalCount;
-        readonly Button _decisions;
-        readonly Label _decisionCount;
         readonly Button _mail;
         readonly Label _mailCount;
         readonly Button _goal;
@@ -123,12 +119,9 @@ namespace IndieStudio.Game.UI
 
             Root.Add(Ui.Grow());
 
-            _critical = Alert(Icons.Bell, "hud-alert--critical", out _criticalCount, () => studio.ShowInbox(InboxFolder.Critical));
-            tooltip.Attach(_critical, () => "Critical news: money, health, broken hardware.");
-            _decisions = Alert(Icons.Scale, "hud-alert--decision", out _decisionCount, () => studio.ShowInbox(InboxFolder.Decisions));
-            tooltip.Attach(_decisions, () => "Decisions waiting for your answer.");
             _mail = Alert(Icons.Mail, "hud-alert--mail", out _mailCount, () => studio.ShowInbox(InboxFolder.All));
-            tooltip.Attach(_mail, () => "Unread mail.");
+            _mail.name = "hud-mail";
+            tooltip.Attach(_mail, MailTooltip);
 
             _goal = Ui.Clickable(ToggleGoals, "hud-goal");
             _goal.name = "hud-goal";
@@ -230,9 +223,8 @@ namespace IndieStudio.Game.UI
             _burnout.text = f.Burnout.ToString("0");
             _burnoutFill.EnableInClassList("fill-bad", f.Burnout >= Tuning.VacationAdviceBurnout);
 
-            SetCount(_critical, _criticalCount, s.Inbox.Messages.Count(m => m.Kind == MessageKind.Critical && !m.IsRead));
-            SetCount(_decisions, _decisionCount, s.Inbox.Pending.Count());
             SetCount(_mail, _mailCount, s.Inbox.UnreadCount);
+            _mail.EnableInClassList("hud-alert--decision", s.Inbox.Pending.Any());
 
             var chapter = GoalChapter;
             _goalChapter.text = s.IsDemo
@@ -247,6 +239,17 @@ namespace IndieStudio.Game.UI
 
         /// <summary>The chapter the goal shows. The demo is chapter 1 from start to end, even once its game is out.</summary>
         ChapterDef GoalChapter => Sim.State.IsDemo ? ChapterCatalog.All[0] : Sim.CurrentChapter;
+
+        string MailTooltip()
+        {
+            var inbox = Sim.State.Inbox;
+            int waiting = inbox.Pending.Count();
+            int unread = inbox.UnreadCount;
+            if (unread == 0) return "Mail. You're all caught up.";
+            return waiting > 0
+                ? $"Mail: {waiting} waiting for your answer{(unread > waiting ? $", {unread - waiting} more unread" : "")}."
+                : $"Mail: {unread} unread.";
+        }
 
         string TimeTooltip()
         {

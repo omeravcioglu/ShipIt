@@ -43,7 +43,7 @@ namespace IndieStudio.Game.Tests
                 foreach (var old in Directory.GetFiles(_folder, "*.png"))
                 {
                     string file = Path.GetFileName(old);
-                    if (!file.StartsWith("save_") && !file.StartsWith("steam_") && !file.StartsWith("fest_") && !file.StartsWith("demo_")) File.Delete(old);
+                    if (!file.StartsWith("save_") && !file.StartsWith("steam_") && !file.StartsWith("fest_") && !file.StartsWith("demo_") && !file.StartsWith("progress_")) File.Delete(old);
                 }
             }
 
@@ -190,7 +190,7 @@ namespace IndieStudio.Game.Tests
                         HasSkill = true, Skill = Skill.Programming, ProgressBefore = 0.55, ProgressAfter = 1, Performance = Rules.MinigameMultiplier(score),
                     };
                     report.Lines.Add("Finished: Jump physics (Programming)");
-                    report.Lines.Add("Flow: session 2 in a row, ×1.05.");
+                    report.Lines.Add("In the zone: 2 sessions in a row on this, +5% done.");
                     return report;
                 },
                 () => Assert.IsNotNull(ui.Root.Q("mg-cheer"), "A finished feature gets a celebration"));

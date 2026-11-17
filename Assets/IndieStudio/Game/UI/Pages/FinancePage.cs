@@ -42,8 +42,8 @@ namespace IndieStudio.Game.UI
         {
             var card = Ui.Card("Cash forecast · next 90 days", "col-8");
             var legend = Ui.Row("legend card__corner");
-            legend.Add(Legend("legend__line", "What the bank knows"));
-            legend.Add(Legend("legend__band", "If gigs keep paying"));
+            legend.Add(Legend("legend__line", "Bills and money on its way"));
+            legend.Add(Legend("legend__band", "If you keep doing gigs"));
             card.Add(legend);
 
             forecast.Range(out double min, out double max);

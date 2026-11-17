@@ -149,7 +149,7 @@ namespace IndieStudio.Game.Tests
                 design.QualitySum = design.Done * 6;
                 var report = Report(finale, score, 0.6, 1.0);
                 report.Lines.Add($"Finished: {finale.Setup.Title} (Design)");
-                report.Lines.Add("Flow: session 3 in a row, ×1.10.");
+                report.Lines.Add("In the zone: 3 sessions in a row on this, +10% done.");
                 return report;
             });
             ui.Minigames.StartPlaying();

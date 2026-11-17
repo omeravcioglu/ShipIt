@@ -17,6 +17,10 @@ namespace IndieStudio.Simulation
         public double Price;
         public double Monthly;
         public TxCategory Category;
+        /// <summary>Something that makes the room cozier rather than solving a problem: it shows up in your room and lifts your mood.</summary>
+        public bool Decor;
+        /// <summary>How much higher your morale settles each week while you own it (decor only).</summary>
+        public double Comfort;
     }
 
     public static class ShopCatalog
@@ -32,8 +36,21 @@ namespace IndieStudio.Simulation
             new ShopItem { Id = "gaming_pc", Name = "Gaming PC", Price = 1800, Monthly = 20, Category = TxCategory.Hardware,
                 Description = "3D builds and bakes stop eating your hours (+$20/month electricity).", Solves = "Slow 3D work on the laptop (−20% output on 3D projects)" },
             new ShopItem { Id = "pro_art_tools", Name = "Pro art software", Monthly = 35, Category = TxCategory.Software,
-                Description = "+10% art speed and quality — only if your Art skill is 4 or higher.", Solves = "Free tools holding a skilled artist back" },
+                Description = "+10% art speed and quality, once your Art is level 4 or higher.", Solves = "Free tools holding a skilled artist back" },
+
+            // Things that make the bedroom yours. Each one shows up in the room and keeps your spirits a little higher.
+            new ShopItem { Id = "string_lights", Name = "String lights", Price = 40, Category = TxCategory.Living, Decor = true, Comfort = 3,
+                Description = "Warm little lights along the wall.", Solves = "Grey evenings at the desk" },
+            new ShopItem { Id = "desk_lamp", Name = "Desk lamp", Price = 60, Category = TxCategory.Living, Decor = true, Comfort = 3,
+                Description = "A warm pool of light for late nights.", Solves = "Squinting at the screen after dark" },
+            new ShopItem { Id = "fluffy_rug", Name = "Fluffy rug", Price = 120, Category = TxCategory.Living, Decor = true, Comfort = 3,
+                Description = "Soft underfoot. The cat approves.", Solves = "A cold, scratchy floor" },
+            new ShopItem { Id = "neon_sign", Name = "Neon studio sign", Price = 350, Category = TxCategory.Living, Decor = true, Comfort = 4,
+                Description = "Your studio's name, glowing over the window.", Solves = "Feeling like a real studio" },
         };
+
+        /// <summary>How much higher morale settles thanks to the decor you own (Design/02 §4: small comforts).</summary>
+        public static double Comfort(GameState state) => Items.Where(i => i.Decor && state.Owned.Contains(i.Id)).Sum(i => i.Comfort);
 
         public static ShopItem Get(string id) => Items.FirstOrDefault(i => i.Id == id);
     }

@@ -26,6 +26,7 @@ namespace IndieStudio.Simulation
             State.Projects.Add(project);
 
             var genre = GameContent.Genre(idea.Genre);
+            Remember(StoryKind.Project, $"Started {project.Title}, {WithArticle(genre.Name.ToLowerInvariant())} game" + (State.ShippedGames == 0 ? ": your first." : "."));
             Post("project_started", MessageKind.Info, $"New project: {project.Title}",
                 $"{genre.Name} · {project.Theme} · {GameContent.ArtStyle(style).Name} · {scope}. \"{project.Hook}.\"\n" +
                 $"{project.FeatureCount} features to build. Your estimate: about {EstimatedSessions(project):0} Build sessions. " +
@@ -116,6 +117,7 @@ namespace IndieStudio.Simulation
             }
             project.Platform = platform;
             project.StorePageDay = State.Day;
+            Remember(StoryKind.Store, $"Opened {(platform == StorePlatform.Vapor ? "a Vapor page" : "a scratch.io page")} for {project.Title}: people can find it now.");
             CheckProgress();
             return true;
         }
@@ -148,6 +150,9 @@ namespace IndieStudio.Simulation
             StartLaunch(project);
             State.ShippedGames++;
             State.Founder.Morale = Rules.Clamp(State.Founder.Morale + 10, 0, 100);
+            Remember(StoryKind.Launch, State.ShippedGames == 1
+                ? $"Launched {project.Title}: your first game is out in the world!"
+                : $"Launched {project.Title}, your {Ordinal(State.ShippedGames)} game, on {(project.Platform == StorePlatform.Vapor ? "Vapor" : "scratch.io")}.");
 
             string store = project.Platform == StorePlatform.Vapor ? $"Vapor with {project.Wishlists:0} wishlists" : "scratch.io";
             Post("launch", MessageKind.Info, $"{project.Title} is out!",
@@ -301,7 +306,12 @@ namespace IndieStudio.Simulation
                                    * Math.Max(0.4, 1.5 - 0.1 * skill) * (1 + 0.01 * Math.Max(0, State.Founder.Burnout - 30));
                 project.BugsCreated += pw * bugsPerPw;
 
-                for (int i = doneBefore; i < stream.FeaturesDone; i++) Note($"{SlotReport.FinishedPrefix}{stream.FeatureName(i)} ({stream.Discipline})");
+                for (int i = doneBefore; i < stream.FeaturesDone; i++)
+                {
+                    Note($"{SlotReport.FinishedPrefix}{stream.FeatureName(i)} ({stream.Discipline})");
+                    log.FeaturesBuilt++;
+                    if (State.Flags.Add("story:first_feature")) Remember(StoryKind.Feature, $"Built your first feature: {stream.FeatureName(i)} for {project.Title}.");
+                }
                 GainXp(stream.Discipline, hoursUsed * productivity);
                 log.ProjectPw += pw;
                 hoursLeft -= hoursUsed;
@@ -318,6 +328,7 @@ namespace IndieStudio.Simulation
             {
                 project.Status = ProjectStatus.ReadyToRelease;
                 project.CompleteDay = day;
+                Remember(StoryKind.Feature, $"Finished building {project.Title}: all {project.FeatureCount} features are in.");
                 Post("project_complete", MessageKind.Info, $"{project.Title}: content complete",
                     "Every feature is built. Build sessions now polish the game: squash bugs and add a little quality until you launch it." +
                     (project.HasStorePage ? "" : " Open a store page before you can launch."));
@@ -410,6 +421,7 @@ namespace IndieStudio.Simulation
             {
                 double views = followers * State.RngMarketing.Range(60, 120);
                 string what = post == MarketingPost.Devlog ? "your devlog" : target != null ? $"a GIF of {target.Title}" : "a silly dev meme";
+                Remember(StoryKind.Fans, $"{char.ToUpper(what[0]) + what.Substring(1)} took off: about {views:#,0} views and {followers:0} new followers.");
                 Post("post_took_off", MessageKind.Info, "A post took off!",
                     $"{char.ToUpper(what[0]) + what.Substring(1)} got about {views:#,0} views. +{followers:0} followers. Luck matters — but only if you keep posting.");
             }
@@ -507,15 +519,22 @@ namespace IndieStudio.Simulation
         static string LaunchWeekLine(ReleaseResult r)
         {
             if (r.Hotfixes == 0 && r.Answers == 0) return "";
+            var done = new List<string>();
+            if (r.Hotfixes > 0) done.Add($"{r.Hotfixes} hotfix{(r.Hotfixes == 1 ? "" : "es")}");
+            if (r.Answers > 0) done.Add($"{r.Answers} round{(r.Answers == 1 ? "" : "s")} of answering players");
+            string what = r.ReviewCount > 0 ? "the reviews" : "players' mood";
             string moved = Math.Abs(r.PositiveShare - r.LaunchMood) >= 0.005
-                ? $"reviews went from {Rules.Pct(r.LaunchMood)} at launch to {Rules.Pct(r.PositiveShare)}"
-                : "reviews held where they started";
-            return $"After launch: {r.Hotfixes} hotfix{(r.Hotfixes == 1 ? "" : "es")} and {r.Answers} answer session{(r.Answers == 1 ? "" : "s")}; {moved}.\n";
+                ? $"moved {what} from {Rules.Pct(r.LaunchMood)} to {Rules.Pct(r.PositiveShare)} positive"
+                : $"kept {what} where {(r.ReviewCount > 0 ? "they" : "it")} started";
+            return $"In launch week, {string.Join(" and ", done)} {moved}.\n";
         }
+
+        static string Capitalized(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text.Substring(1);
 
         void PostPostMortem(Project project)
         {
             var r = project.Result;
+            Remember(StoryKind.Launch, $"{project.Title}, a month in: {project.UnitsSold:#,0} copies sold, {Rules.Money(project.NetRevenue)} earned.");
             var genre = GameContent.Genre(project.Genre);
             var style = GameContent.ArtStyle(project.ArtStyle);
             double overrun = project.InitialEstimatePw > 0 ? project.TotalRequired / project.InitialEstimatePw - 1 : 0;
@@ -529,17 +548,17 @@ namespace IndieStudio.Simulation
             var weakest = weighted.OrderBy(x => (x.Score - 10) * x.Value).First();
             var strongest = weighted.OrderByDescending(x => x.Score * x.Value).First();
 
-            string pillars = string.Join(" · ", r.Pillars.Select(p => $"{p.Key} {p.Value:0.0}")) + $" · Stability {r.Stability:0.0}";
-            string reviews = r.ReviewCount < 10
-                ? $"only {r.ReviewCount} review{(r.ReviewCount == 1 ? "" : "s")} so far — too few for a score"
-                : $"{r.ReviewLabel} ({Rules.Pct(r.PositiveShare)} of {r.ReviewCount})";
+            string reviews = r.ReviewCount == 0 ? "Nobody has written a review yet."
+                : r.ReviewCount < 10 ? $"Only {r.ReviewCount} review{(r.ReviewCount == 1 ? "" : "s")} so far, too few for a score."
+                : $"Reviews: {r.ReviewLabel} ({Rules.Pct(r.PositiveShare)} positive).";
+            string match = fit >= 0.75 ? $" {genre.Name} and {style.Name} turned out to be a great match."
+                : fit < 0 ? $" {style.Name} wasn't a great look for {genre.Name.ToLowerInvariant()}." : "";
             string body =
-                $"First 30 days: {project.UnitsSold:#,0} copies, {Rules.Money(project.NetRevenue)} earned after fees and refunds. Reviews: {reviews}.\n" +
-                $"Your forecast was {r.ForecastLow:0}–{r.ForecastHigh:0} copies." + (r.Viral ? " It went viral." : "") + "\n" +
+                $"A month after launch: {project.UnitsSold:#,0} copies sold and {Rules.Money(project.NetRevenue)} earned." + (r.Viral ? " It went viral!" : "") + $" {reviews}\n" +
+                $"Players loved {GameContent.PillarWord(strongest.Pillar)}. {Capitalized(GameContent.PillarWord(weakest.Pillar))} held it back." + match +
+                (r.Stability < 6 ? " Bugs put some players off." : "") + "\n" +
                 LaunchWeekLine(r) +
-                $"Estimate: you planned {project.InitialEstimatePw:0.0} person-weeks; it took {project.TotalRequired:0.0} ({overrun:+0%;-0%;0%}).\n" +
-                $"What players saw (now revealed): {pillars}.\n" +
-                $"Strongest: {strongest.Pillar}. Biggest drag: {weakest.Pillar}. {genre.Name} × {style.Name} turned out to be {fitLabel} fit.\n" +
+                (overrun > 0.15 ? $"It took {overrun:0%} longer to make than you planned.\n" : "") +
                 "Pick a lesson to carry into every future project:";
 
             var candidates = new List<string>();

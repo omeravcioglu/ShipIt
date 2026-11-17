@@ -5,21 +5,19 @@ using UnityEngine.UIElements;
 
 namespace IndieStudio.Game.UI
 {
-    public enum InboxFolder { All, Decisions, Critical, Opportunities, News }
+    public enum InboxFolder { All, Decisions }
 
     /// <summary>
-    /// Mail (Design/18 §6): folders by severity, the message list, and a reading pane where decisions are
-    /// answered. Decisions and critical messages also pop up as a modal and pause the game.
+    /// Mail (Design/18 §6): everything that arrived, the messages that wait for your answer, and a reading pane where
+    /// decisions are answered. Decisions and important news also pop up when they arrive; news you saw pop up
+    /// doesn't count as unread.
     /// </summary>
     public sealed class InboxPage : Page
     {
         static readonly (InboxFolder Folder, string Name, string Icon, string Classes)[] FolderDefs =
         {
             (InboxFolder.All, "All mail", Icons.Mail, "bg-peach"),
-            (InboxFolder.Decisions, "Decisions", Icons.Scale, "kind-decision"),
-            (InboxFolder.Critical, "Critical", Icons.Warning, "kind-critical"),
-            (InboxFolder.Opportunities, "Opportunities", Icons.Star, "kind-opportunity"),
-            (InboxFolder.News, "News", Icons.Info, "kind-info"),
+            (InboxFolder.Decisions, "To answer", Icons.Scale, "kind-decision"),
         };
 
         int _selectedId = -1;
@@ -45,14 +43,7 @@ namespace IndieStudio.Game.UI
 
         static bool InFolder(Message m, InboxFolder folder)
         {
-            switch (folder)
-            {
-                case InboxFolder.Decisions: return m.Options.Count > 0;
-                case InboxFolder.Critical: return m.Kind == MessageKind.Critical;
-                case InboxFolder.Opportunities: return m.Kind == MessageKind.Opportunity;
-                case InboxFolder.News: return m.Kind == MessageKind.Info && m.Options.Count == 0;
-                default: return true;
-            }
+            return folder != InboxFolder.Decisions || m.Options.Count > 0;
         }
 
         public override void Refresh()
@@ -97,25 +88,7 @@ namespace IndieStudio.Game.UI
                 foreach (var m in State.Inbox.Messages) Sim.MarkRead(m.Id);
             }, "btn btn--small btn--mustard");
             column.Add(markAll);
-            column.Add(Ui.Grow());
-
-            var rules = Ui.Card("Pausing", "inbox__rules");
-            rules.Add(Rule(Icons.Lock, "Critical", "Always pauses the game", "bg-red-light"));
-            rules.Add(Rule(Icons.Lock, "Decisions", "Pause until you answer", "bg-mustard-light"));
-            rules.Add(Rule(Icons.Info, "Everything else", "Pops up for 5 seconds", "bg-cream"));
-            column.Add(rules);
             return column;
-        }
-
-        static VisualElement Rule(string icon, string name, string text, string classes)
-        {
-            var row = Ui.Row("rule " + classes);
-            var words = Ui.El("grow");
-            words.Add(Ui.Text(name, "rule__name"));
-            words.Add(Ui.Text(text, "rule__text"));
-            row.Add(words);
-            row.Add(new Icon(icon, 16f));
-            return row;
         }
 
         VisualElement List(List<Message> messages)
@@ -191,7 +164,7 @@ namespace IndieStudio.Game.UI
             var letter = Ui.El("letter");
             letter.Add(Ui.Text(m.Body, "letter__text"));
             if (m.NeedsDecision || (m.Kind == MessageKind.Critical && m.ChosenOption < 0))
-                letter.Add(Ui.Display(m.NeedsDecision ? "YOUR MOVE" : "GAME PAUSED", "stamp " + (m.Kind == MessageKind.Critical ? "stamp--red" : "stamp--brown")));
+                letter.Add(Ui.Display(m.NeedsDecision ? "YOUR MOVE" : "IMPORTANT", "stamp " + (m.Kind == MessageKind.Critical ? "stamp--red" : "stamp--brown")));
             body.Add(letter);
 
             if (m.NeedsDecision)
