@@ -11,6 +11,9 @@ namespace IndieStudio.Simulation
         /// <summary>Adds a moment to the studio's story, dated today.</summary>
         void Remember(StoryKind kind, string text) => State.Story.Add(new StoryEntry { Day = State.Day, Kind = kind, Text = text });
 
+        /// <summary>The demo's stretch goal was met: the game launched by Sunday the 7th and the blog featured it.</summary>
+        public bool DemoFeatured => State.Flags.Contains(DemoRules.FeaturedFlag);
+
         /// <summary>Fan milestones reached so far (each pins a note to the corkboard in the room).</summary>
         public int FanMilestonesReached => Tuning.FanMilestones.Count(m => State.Audience.Followers >= m);
 

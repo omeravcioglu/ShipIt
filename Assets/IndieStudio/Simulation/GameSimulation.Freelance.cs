@@ -234,7 +234,7 @@ namespace IndieStudio.Simulation
                 Title = "Fix a few bugs in a small mobile game",
                 Discipline = Skill.Programming,
                 RequiredSkill = 1.5,
-                Hours = 12,
+                Hours = State.IsDemo ? DemoRules.SamGigHours : 12,
                 Pay = 180,
                 OfferedDay = 0,
                 ExpiresDay = 13,

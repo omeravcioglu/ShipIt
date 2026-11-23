@@ -68,6 +68,7 @@ namespace IndieStudio.Game.UI
                 case "money_warning":
                 case "in_red":
                 case "monthly_report":
+                case "payment":
                 case "taxes":
                 case "game_over":
                     return App("Bank", Icons.Bank, "bg-green");

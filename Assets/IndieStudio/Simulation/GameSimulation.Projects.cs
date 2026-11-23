@@ -141,6 +141,14 @@ namespace IndieStudio.Simulation
             result.PositiveShare = Rules.PositiveShare(result.Quality, price, project.Scope);
             ForecastFirstMonth(project, price, out result.ForecastLow, out result.ForecastHigh);
             PlanSales(project, result, price);
+            bool featured = State.IsDemo && State.ShippedGames == 0 && State.Day < DemoRules.FeatureByDay;
+            if (featured)
+            {
+                // The demo's stretch goal: out by Sunday the 7th, so the games blog features it on launch day.
+                result.MonthlyUnits[0] *= DemoRules.FeatureSalesBoost;
+                State.Audience.Followers += DemoRules.FeatureFollowers;
+                State.Flags.Add(DemoRules.FeaturedFlag);
+            }
 
             project.Result = result;
             project.Price = price;
@@ -153,11 +161,13 @@ namespace IndieStudio.Simulation
             Remember(StoryKind.Launch, State.ShippedGames == 1
                 ? $"Launched {project.Title}: your first game is out in the world!"
                 : $"Launched {project.Title}, your {Ordinal(State.ShippedGames)} game, on {(project.Platform == StorePlatform.Vapor ? "Vapor" : "scratch.io")}.");
+            if (featured) Remember(StoryKind.Fans, $"{DemoRules.FeatureOutlet} featured {project.Title} on launch day!");
 
             string store = project.Platform == StorePlatform.Vapor ? $"Vapor with {project.Wishlists:0} wishlists" : "scratch.io";
             Post("launch", MessageKind.Info, $"{project.Title} is out!",
                 $"Released on {store} at ${price:0.00}. Launch-week discount: {(project.Platform == StorePlatform.Vapor ? "10%" : "none")}.\n" +
                 $"Your forecast for the first month: {result.ForecastLow:0}–{result.ForecastHigh:0} copies. Morale +10.\n" +
+                (featured ? $"{DemoRules.FeatureOutlet} featured it on launch day: more players found it, and {DemoRules.FeatureFollowers} of them followed you.\n" : "") +
                 (State.IsDemo ? "Your first game is out in the world."
                     : "Launch week starts now: hotfixes count most in the first days, players want answers, and posts sell copies.") +
                 (leftFest ? "\nIt was signed up for Next Fest, which is for unreleased games, so it left the fest." : ""));

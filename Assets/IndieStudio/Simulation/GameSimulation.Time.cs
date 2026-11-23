@@ -298,7 +298,17 @@ namespace IndieStudio.Simulation
             {
                 State.Finance.Apply(day, payment.Amount, payment.Category, payment.Description);
                 State.Finance.Scheduled.Remove(payment);
+                if (payment.Amount >= 1) Post("payment", MessageKind.Info, $"Paid! +{Rules.Money(payment.Amount)}", PaymentNote(payment.Description));
             }
+        }
+
+        /// <summary>"The money for "Fix a few bugs" just arrived."</summary>
+        static string PaymentNote(string description)
+        {
+            description = description ?? "";
+            if (description.StartsWith("Gig: ")) return $"The money for \"{description.Substring(5)}\" just arrived.";
+            if (description.StartsWith("Late payment: ")) return $"The late payment for \"{description.Substring(14)}\" finally arrived.";
+            return description + " just arrived.";
         }
 
         void Schedule(int day, double amount, TxCategory category, string description)

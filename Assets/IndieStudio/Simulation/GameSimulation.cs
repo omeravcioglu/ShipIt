@@ -67,6 +67,7 @@ namespace IndieStudio.Simulation
             f.Skills[Skill.Art] = 1.5;
             f.Skills[Skill.Writing] = 1.5;
             f.Skills[Skill.Audio] = 1;
+            if (State.IsDemo) foreach (var (skill, value) in DemoRules.StartingSkills) f.Skills[skill] = value;
 
             var fin = State.Finance;
             fin.Cash = Tuning.StartCash;
